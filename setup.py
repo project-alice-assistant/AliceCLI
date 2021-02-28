@@ -1,8 +1,13 @@
+from pathlib import Path
+
 from setuptools import find_packages, setup
+
 
 setup(
 	name='projectalice-cli',
 	version='0.0.1',
+	long_description=Path('README.md').read_text(encoding='utf8'),
+	long_description_content_type='text/markdown',
 	packages=find_packages(),
 	include_package_data=True,
 	url='https://github.com/project-alice-assistant/AliceCLI',
@@ -12,7 +17,8 @@ setup(
 	description='Project Alice CLI tool',
 	install_requires=[
         'Click',
-		'paramiko'
+		'paramiko',
+		'PyInquirer'
     ],
 	classifiers=[
 		"Development Status :: 2 - Pre-Alpha",
