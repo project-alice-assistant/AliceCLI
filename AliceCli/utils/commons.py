@@ -11,7 +11,12 @@ from AliceCli import MainMenu
 IP_REGEX = re.compile(r'^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')
 
 def printError(text: str):
-	click.secho(text, fg='red')
+	click.secho(message=f'✘ {text}', fg='red')
+	time.sleep(2)
+
+
+def printSuccess(text: str):
+	click.secho(message=f'✔ {text}', fg='green')
 	time.sleep(2)
 
 
@@ -32,7 +37,7 @@ def _animation(flag: Event):
 		time.sleep(0.1)
 
 
-def returnToMainMenu():
+def askReturnToMainMenu(ctx: click.Context):
 	answers = prompt(
 		questions=[
 			{
@@ -49,4 +54,8 @@ def returnToMainMenu():
 	if answers['return'] == 'Exit':
 		sys.exit(0)
 	else:
-		MainMenu.mainMenu()
+		returnToMainMenu(ctx)
+
+
+def returnToMainMenu(ctx: click.Context):
+	ctx.invoke(MainMenu.mainMenu)

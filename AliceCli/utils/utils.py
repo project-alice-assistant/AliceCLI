@@ -1,7 +1,9 @@
 import json
 import socket
+import time
 import uuid
 from pathlib import Path
+from typing import Optional
 
 from PyInquirer import prompt
 
@@ -12,13 +14,19 @@ from networkscan import networkscan
 from AliceCli.utils import commons
 from AliceCli.utils.commons import IP_REGEX
 
+CONNECTED_TO = ''
+
 
 @click.command()
 @click.option('-i', '--ip_address', required=False, type=str, default='')
 @click.option('-p', '--port', required=False, type=int, default=22)
 @click.option('-u', '--user', required=False, type=str, default='pi')
 @click.option('-pw', '--password', required=False, type=str, default='')
-def connect(ip_address: str, port: int, user: str, password: str):
+@click.option('-r', '--return_to_main_menu', required=False, type=bool, default=True)
+@click.pass_context
+def connect(ctx: click.Context, ip_address: str, port: int, user: str, password: str, return_to_main_menu: bool) -> Optional[paramiko.SSHClient]:
+	global CONNECTED_TO
+
 	remoteAuthorizedKeysFile = '~/.ssh/authorized_keys'
 	confFile = Path(Path.home(), '.pacli/configs.json')
 	confFile.parent.mkdir(parents=True, exist_ok=True)
@@ -30,17 +38,20 @@ def connect(ip_address: str, port: int, user: str, password: str):
 		confs = json.loads(confFile.read_text())
 
 	if not ip_address:
-		question = [
-			{
-				'type'    : 'input',
-				'name'    : 'ip_address',
-				'message' : 'Please enter the device IP address',
-				'validate': lambda ip: IP_REGEX.match(ip) is not None
-			}
-		]
+		if CONNECTED_TO:
+			ip_address = CONNECTED_TO
+		else:
+			question = [
+				{
+					'type'    : 'input',
+					'name'    : 'ip_address',
+					'message' : 'Please enter the device IP address',
+					'validate': lambda ip: IP_REGEX.match(ip) is not None
+				}
+			]
 
-		answers = prompt(questions=question)
-		ip_address = answers['ip_address']
+			answers = prompt(questions=question)
+			ip_address = answers['ip_address']
 
 	data = confs['servers'].get(ip_address, dict()).get('keyFile')
 	if data:
@@ -79,7 +90,8 @@ def connect(ip_address: str, port: int, user: str, password: str):
 	except Exception as e:
 		commons.printError(f'Failed connecting to device: {e}')
 	else:
-		click.secho('Successfully connected to device', fg='yellow')
+		commons.printSuccess('Successfully connected to device')
+		CONNECTED_TO = ip_address
 		if ip_address not in confs['servers']:
 			filename = f'id_rsa_{str(uuid.uuid4())}'
 			keyFile = Path(Path.home(), f'.ssh/{filename}')
@@ -96,10 +108,16 @@ def connect(ip_address: str, port: int, user: str, password: str):
 			pubKeyFile.write_text(key.get_base64())
 			ssh.exec_command(f"echo \"ssh-rsa {pubKeyFile.read_text()} Project Alice RSA key\" | exec sh -c 'cd ; umask 077 ; mkdir -p .ssh && cat >> {remoteAuthorizedKeysFile} || exit 1 ; if type restorecon >/dev/null 2>&1 ; then restorecon -F .ssh ${remoteAuthorizedKeysFile} ; fi'")
 
+		if not return_to_main_menu:
+			return ssh
+
+	commons.returnToMainMenu(ctx)
+
 
 @click.command()
 @click.option('-n', '--network', required=False, type=str, default='')
-def discover(network: str):
+@click.pass_context
+def discover(ctx: click.Context, network: str):
 	click.clear()
 	click.secho('Discovering devices on your network, please wait', fg='yellow')
 
@@ -125,4 +143,62 @@ def discover(network: str):
 
 		flag.clear()
 
-	commons.returnToMainMenu()
+	commons.returnToMainMenu(ctx)
+
+
+@click.command()
+@click.pass_context
+def reboot(ctx: click.Context):
+	global CONNECTED_TO
+
+	if not CONNECTED_TO:
+		commons.printError('Please connect to a server first')
+		commons.returnToMainMenu(ctx)
+	else:
+		ssh = ctx.invoke(connect, return_to_main_menu=False)
+		if not ssh:
+			commons.printError('Something went wrong connecting to server')
+			commons.returnToMainMenu(ctx)
+			return
+
+		click.secho('Rebooting device, please wait', color='yellow')
+		flag = commons.waitAnimation()
+		ssh.exec_command('sudo reboot')
+
+		i = 0
+		while i < 10:
+			time.sleep(5)
+			test = connect()
+			if test:
+				commons.printSuccess('Device rebooted!')
+				commons.returnToMainMenu(ctx)
+				flag.clear()
+				return
+			i += 1
+
+		flag.clear()
+		commons.printError('Failed rebooting device')
+		commons.returnToMainMenu(ctx)
+
+
+@click.command()
+@click.pass_context
+def update_system(ctx: click.Context):
+	global CONNECTED_TO
+
+	if not CONNECTED_TO:
+		commons.printError('Please connect to a server first')
+		commons.returnToMainMenu(ctx)
+	else:
+		ssh = ctx.invoke(connect, return_to_main_menu=False)
+		if not ssh:
+			commons.printError('Something went wrong connecting to server')
+			commons.returnToMainMenu(ctx)
+			return
+
+		click.secho('Update device\'s system, please wait', color='yellow')
+		flag = commons.waitAnimation()
+		ssh.exec_command('sudo apt-get update && sudo apt-get dist-upgrade -y')
+		flag.clear()
+		commons.printSuccess('Device updated!')
+		commons.returnToMainMenu(ctx)

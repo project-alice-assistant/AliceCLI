@@ -3,10 +3,12 @@ import sys
 import click
 from PyInquirer import Separator, prompt
 
-from AliceCli.utils import utils
+from AliceCli.utils.utils import connect, discover, reboot
 
 
-def mainMenu():
+@click.command(name='main_menu')
+@click.pass_context
+def mainMenu(ctx: click.Context):
 	click.clear()
 	answers = prompt(
 		questions=[
@@ -31,19 +33,24 @@ def mainMenu():
 					Separator(),
 					'Update Alice',
 					'Update system',
-					'Restart device',
+					'Reboot device',
 					'Exit'
 				]
 			}
 		]
 	)
 
+	if not answers:
+		sys.exit(0)
+
 	if answers['mainMenu'] == 'Exit':
 		sys.exit(0)
 	elif answers['mainMenu'] == 'Discover devices on network':
-		utils.discover()
+		ctx.invoke(discover)
 	elif answers['mainMenu'] == 'Connect to a device':
-		utils.connect()
+		ctx.invoke(connect)
 	elif answers['mainMenu'] == 'Restart device':
-		pass
+		ctx.invoke(reboot)
+	elif answers['mainMenu'] == 'Update system':
+		ctx.invoke(reboot)
 
