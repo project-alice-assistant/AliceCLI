@@ -1,8 +1,7 @@
 import click
 
 from . import MainMenu
-from .connect import connect
-from .discover import discover
+from .utils import utils
 
 
 @click.group(invoke_without_command=True)
@@ -12,5 +11,5 @@ def cli(ctx):
 		click.clear()
 		MainMenu.mainMenu()
 
-cli.add_command(connect.connect)
-cli.add_command(discover.discover)
+cli.add_command(utils.connect)
+cli.add_command(utils.discover)

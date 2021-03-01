@@ -3,8 +3,7 @@ import sys
 import click
 from PyInquirer import Separator, prompt
 
-from AliceCli.connect import connect
-from AliceCli.discover import discover
+from AliceCli.utils import utils
 
 
 def mainMenu():
@@ -42,6 +41,9 @@ def mainMenu():
 	if answers['mainMenu'] == 'Exit':
 		sys.exit(0)
 	elif answers['mainMenu'] == 'Discover devices on network':
-		discover.discover()
+		utils.discover()
 	elif answers['mainMenu'] == 'Connect to a device':
-		connect.connect()
+		utils.connect()
+	elif answers['mainMenu'] == 'Restart device':
+		pass
+
