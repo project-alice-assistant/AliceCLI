@@ -18,7 +18,8 @@ setup(
 	install_requires=[
         'Click',
 		'paramiko',
-		'PyInquirer'
+		'PyInquirer',
+		'networkscan'
     ],
 	classifiers=[
 		"Development Status :: 2 - Pre-Alpha",

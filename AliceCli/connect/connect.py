@@ -1,4 +1,3 @@
-import re
 from pathlib import Path
 
 from PyInquirer import prompt
@@ -6,7 +5,7 @@ from PyInquirer import prompt
 import click
 import paramiko
 
-IP_REGEX = re.compile(r'^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')
+from AliceCli.utils.utils import IP_REGEX
 
 
 @click.command()
