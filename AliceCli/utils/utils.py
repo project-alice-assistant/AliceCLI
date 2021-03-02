@@ -12,6 +12,8 @@ import paramiko
 from networkscan import networkscan
 
 from AliceCli.utils import commons
+from AliceCli.utils.decorators import checkConnection
+
 
 @click.command()
 @click.option('-i', '--ip_address', required=False, type=str, default='')
@@ -140,15 +142,12 @@ def discover(ctx: click.Context, network: str):
 
 @click.command()
 @click.pass_context
+@checkConnection
 def reboot(ctx: click.Context):
 	click.secho('Rebooting device, please wait', color='yellow')
 
-	ssh = commons.checkConnection(ctx)
-	if not ssh:
-		return
-
 	flag = commons.waitAnimation()
-	ssh.exec_command('sudo reboot')
+	commons.SSH.exec_command('sudo reboot')
 
 	i = 0
 	while i < 10:
@@ -168,15 +167,12 @@ def reboot(ctx: click.Context):
 
 @click.command()
 @click.pass_context
+@checkConnection
 def update_system(ctx: click.Context):
 	click.secho('Updating device\'s system, please wait', color='yellow')
 
-	ssh = commons.checkConnection(ctx)
-	if not ssh:
-		return
-
 	flag = commons.waitAnimation()
-	stdin, stdout, stderr = ssh.exec_command('sudo apt-get update && sudo apt-get upgrade -y')
+	stdin, stdout, stderr = commons.SSH.exec_command('sudo apt-get update && sudo apt-get upgrade -y')
 	line = stdout.readline()
 	while line:
 		click.secho(line, nl=False, color='yellow')
@@ -189,15 +185,12 @@ def update_system(ctx: click.Context):
 
 @click.command()
 @click.pass_context
+@checkConnection
 def upgrade_system(ctx: click.Context):
 	click.secho('Upgrading device\'s system, please wait', color='yellow')
 
-	ssh = commons.checkConnection(ctx)
-	if not ssh:
-		return
-
 	flag = commons.waitAnimation()
-	stdin, stdout, stderr = ssh.exec_command('sudo apt-get update && sudo apt-get dist-upgrade -y')
+	stdin, stdout, stderr = commons.SSH.exec_command('sudo apt-get update && sudo apt-get dist-upgrade -y')
 	line = stdout.readline()
 	while line:
 		click.secho(line, nl=False, color='yellow')
@@ -210,15 +203,12 @@ def upgrade_system(ctx: click.Context):
 
 @click.command()
 @click.pass_context
+@checkConnection
 def sound_test(ctx: click.Context):
 	click.secho('Testing sound output....', color='yellow')
 
-	ssh = commons.checkConnection(ctx)
-	if not ssh:
-		return
-
 	flag = commons.waitAnimation()
-	stdin, stdout, stderr = ssh.exec_command('sudo aplay /usr/share/sounds/alsa/Front_Center.wav')
+	stdin, stdout, stderr = commons.SSH.exec_command('sudo aplay /usr/share/sounds/alsa/Front_Center.wav')
 	line = stdout.readline()
 	click.secho(line)
 	flag.clear()

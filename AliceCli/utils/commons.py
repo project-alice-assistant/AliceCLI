@@ -65,15 +65,3 @@ def askReturnToMainMenu(ctx: click.Context):
 
 def returnToMainMenu(ctx: click.Context):
 	ctx.invoke(MainMenu.mainMenu)
-
-
-def checkConnection(ctx: click.Context):
-	global SSH
-
-	if not SSH:
-		printError('Please connect to a server first')
-		ssh = ctx.invoke(utils.connect, return_to_main_menu=False)
-	else:
-		ssh = SSH
-
-	return ssh

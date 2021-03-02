@@ -3,7 +3,7 @@ import sys
 import click
 from PyInquirer import Separator, prompt
 
-from AliceCli.alice.alice import update_alice
+from AliceCli.alice.alice import systemctl, update_alice
 from AliceCli.utils.utils import connect, discover, reboot, sound_test, update_system, upgrade_system
 
 
@@ -26,11 +26,13 @@ def mainMenu(ctx: click.Context):
 					'Install Alice',
 					'Install Alice satellite',
 					Separator(),
+					'Start Alice',
 					'Restart Alice',
-					'Restart Alice Satellite',
+					'Stop Alice',
+					'Enable Alice service',
+					'Disable Alice service',
 					Separator(),
 					'Uninstall Alice',
-					'Uninstall Alice satellite',
 					Separator(),
 					'Update Alice',
 					'Update system',
@@ -61,3 +63,13 @@ def mainMenu(ctx: click.Context):
 		ctx.invoke(sound_test, ctx)
 	elif answers['mainMenu'] == 'Update Alice':
 		ctx.invoke(update_alice, ctx)
+	elif answers['mainMenu'] == 'Restart Alice':
+		ctx.invoke(systemctl, ctx, option='restart')
+	elif answers['mainMenu'] == 'Start Alice':
+		ctx.invoke(systemctl, ctx, option='start')
+	elif answers['mainMenu'] == 'Stop Alice':
+		ctx.invoke(systemctl, ctx, option='stop')
+	elif answers['mainMenu'] == 'Enable Alice service':
+		ctx.invoke(systemctl, ctx, option='enable')
+	elif answers['mainMenu'] == 'Disable Alice service':
+		ctx.invoke(systemctl, ctx, option='disable')
