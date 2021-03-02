@@ -3,6 +3,7 @@ import sys
 import click
 from PyInquirer import Separator, prompt
 
+from AliceCli.alice.alice import update_alice
 from AliceCli.utils.utils import connect, discover, reboot, sound_test, update_system, upgrade_system
 
 
@@ -47,15 +48,16 @@ def mainMenu(ctx: click.Context):
 	if answers['mainMenu'] == 'Exit':
 		sys.exit(0)
 	elif answers['mainMenu'] == 'Discover devices on network':
-		ctx.invoke(discover)
+		ctx.invoke(discover, ctx)
 	elif answers['mainMenu'] == 'Connect to a device':
-		ctx.invoke(connect)
+		ctx.invoke(connect, ctx)
 	elif answers['mainMenu'] == 'Restart device':
-		ctx.invoke(reboot)
+		ctx.invoke(reboot, ctx)
 	elif answers['mainMenu'] == 'Update system':
-		ctx.invoke(update_system)
+		ctx.invoke(update_system, ctx)
 	elif answers['mainMenu'] == 'Upgrade system':
-		ctx.invoke(upgrade_system)
+		ctx.invoke(upgrade_system, ctx)
 	elif answers['mainMenu'] == 'Sound test':
-		ctx.invoke(sound_test)
-
+		ctx.invoke(sound_test, ctx)
+	elif answers['mainMenu'] == 'Update Alice':
+		ctx.invoke(update_alice, ctx)

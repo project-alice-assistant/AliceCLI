@@ -12,10 +12,6 @@ import paramiko
 from networkscan import networkscan
 
 from AliceCli.utils import commons
-from AliceCli.utils.commons import IP_REGEX
-
-CONNECTED_TO = ''
-
 
 @click.command()
 @click.option('-i', '--ip_address', required=False, type=str, default='')
@@ -25,8 +21,6 @@ CONNECTED_TO = ''
 @click.option('-r', '--return_to_main_menu', required=False, type=bool, default=True)
 @click.pass_context
 def connect(ctx: click.Context, ip_address: str, port: int, user: str, password: str, return_to_main_menu: bool) -> Optional[paramiko.SSHClient]:
-	global CONNECTED_TO
-
 	remoteAuthorizedKeysFile = '~/.ssh/authorized_keys'
 	confFile = Path(Path.home(), '.pacli/configs.json')
 	confFile.parent.mkdir(parents=True, exist_ok=True)
@@ -38,20 +32,17 @@ def connect(ctx: click.Context, ip_address: str, port: int, user: str, password:
 		confs = json.loads(confFile.read_text())
 
 	if not ip_address:
-		if CONNECTED_TO:
-			ip_address = CONNECTED_TO
-		else:
-			question = [
-				{
-					'type'    : 'input',
-					'name'    : 'ip_address',
-					'message' : 'Please enter the device IP address',
-					'validate': lambda ip: IP_REGEX.match(ip) is not None
-				}
-			]
+		question = [
+			{
+				'type'    : 'input',
+				'name'    : 'ip_address',
+				'message' : 'Please enter the device IP address',
+				'validate': lambda ip: commons.IP_REGEX.match(ip) is not None
+			}
+		]
 
-			answers = prompt(questions=question)
-			ip_address = answers['ip_address']
+		answers = prompt(questions=question)
+		ip_address = answers['ip_address']
 
 	data = confs['servers'].get(ip_address, dict()).get('keyFile')
 	if data:
@@ -91,7 +82,7 @@ def connect(ctx: click.Context, ip_address: str, port: int, user: str, password:
 		commons.printError(f'Failed connecting to device: {e}')
 	else:
 		commons.printSuccess('Successfully connected to device')
-		CONNECTED_TO = ip_address
+		commons.SSH = ssh
 		if ip_address not in confs['servers']:
 			filename = f'id_rsa_{str(uuid.uuid4())}'
 			keyFile = Path(Path.home(), f'.ssh/{filename}')
@@ -121,7 +112,7 @@ def discover(ctx: click.Context, network: str):
 	click.clear()
 	click.secho('Discovering devices on your network, please wait', fg='yellow')
 
-	ip = IP_REGEX.search(socket.gethostbyname(socket.gethostname()))
+	ip = commons.IP_REGEX.search(socket.gethostbyname(socket.gethostname()))
 	if not ip and not network:
 		commons.printError("Could retrieve local ip addresse")
 	else:
@@ -152,7 +143,7 @@ def discover(ctx: click.Context, network: str):
 def reboot(ctx: click.Context):
 	click.secho('Rebooting device, please wait', color='yellow')
 
-	ssh = checkConnection(ctx)
+	ssh = commons.checkConnection(ctx)
 	if not ssh:
 		return
 
@@ -180,7 +171,7 @@ def reboot(ctx: click.Context):
 def update_system(ctx: click.Context):
 	click.secho('Updating device\'s system, please wait', color='yellow')
 
-	ssh = checkConnection(ctx)
+	ssh = commons.checkConnection(ctx)
 	if not ssh:
 		return
 
@@ -201,7 +192,7 @@ def update_system(ctx: click.Context):
 def upgrade_system(ctx: click.Context):
 	click.secho('Upgrading device\'s system, please wait', color='yellow')
 
-	ssh = checkConnection(ctx)
+	ssh = commons.checkConnection(ctx)
 	if not ssh:
 		return
 
@@ -222,7 +213,7 @@ def upgrade_system(ctx: click.Context):
 def sound_test(ctx: click.Context):
 	click.secho('Testing sound output....', color='yellow')
 
-	ssh = checkConnection(ctx)
+	ssh = commons.checkConnection(ctx)
 	if not ssh:
 		return
 
@@ -232,18 +223,3 @@ def sound_test(ctx: click.Context):
 	click.secho(line)
 	flag.clear()
 	commons.returnToMainMenu(ctx)
-
-
-def checkConnection(ctx: click.Context):
-	global CONNECTED_TO
-
-	if not CONNECTED_TO:
-		commons.printError('Please connect to a server first')
-		ssh = ctx.invoke(connect, return_to_main_menu=False)
-	else:
-		ssh = ctx.invoke(connect, return_to_main_menu=False)
-		if not ssh:
-			commons.printError('Something went wrong connecting to server')
-			commons.returnToMainMenu(ctx)
-
-	return ssh

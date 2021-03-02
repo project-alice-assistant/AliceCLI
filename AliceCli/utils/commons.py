@@ -6,9 +6,11 @@ from threading import Event, Thread
 
 from PyInquirer import prompt
 
-from AliceCli import MainMenu
+import AliceCli.MainMenu as MainMenu
+from AliceCli.utils import utils
 
 IP_REGEX = re.compile(r'^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')
+SSH = None
 
 def printError(text: str):
 	click.secho(message=f'✘ {text}', fg='red')
@@ -63,3 +65,15 @@ def askReturnToMainMenu(ctx: click.Context):
 
 def returnToMainMenu(ctx: click.Context):
 	ctx.invoke(MainMenu.mainMenu)
+
+
+def checkConnection(ctx: click.Context):
+	global SSH
+
+	if not SSH:
+		printError('Please connect to a server first')
+		ssh = ctx.invoke(utils.connect, return_to_main_menu=False)
+	else:
+		ssh = SSH
+
+	return ssh
