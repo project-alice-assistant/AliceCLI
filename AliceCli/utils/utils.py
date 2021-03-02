@@ -143,62 +143,107 @@ def discover(ctx: click.Context, network: str):
 
 		flag.clear()
 
+	commons.waitForAnyInput()
 	commons.returnToMainMenu(ctx)
 
 
 @click.command()
 @click.pass_context
 def reboot(ctx: click.Context):
-	global CONNECTED_TO
+	click.secho('Rebooting device, please wait', color='yellow')
 
-	if not CONNECTED_TO:
-		commons.printError('Please connect to a server first')
-		commons.returnToMainMenu(ctx)
-	else:
-		ssh = ctx.invoke(connect, return_to_main_menu=False)
-		if not ssh:
-			commons.printError('Something went wrong connecting to server')
+	ssh = checkConnection(ctx)
+	if not ssh:
+		return
+
+	flag = commons.waitAnimation()
+	ssh.exec_command('sudo reboot')
+
+	i = 0
+	while i < 10:
+		time.sleep(5)
+		test = connect()
+		if test:
+			commons.printSuccess('Device rebooted!')
 			commons.returnToMainMenu(ctx)
+			flag.clear()
 			return
+		i += 1
 
-		click.secho('Rebooting device, please wait', color='yellow')
-		flag = commons.waitAnimation()
-		ssh.exec_command('sudo reboot')
-
-		i = 0
-		while i < 10:
-			time.sleep(5)
-			test = connect()
-			if test:
-				commons.printSuccess('Device rebooted!')
-				commons.returnToMainMenu(ctx)
-				flag.clear()
-				return
-			i += 1
-
-		flag.clear()
-		commons.printError('Failed rebooting device')
-		commons.returnToMainMenu(ctx)
+	flag.clear()
+	commons.printError('Failed rebooting device')
+	commons.returnToMainMenu(ctx)
 
 
 @click.command()
 @click.pass_context
 def update_system(ctx: click.Context):
+	click.secho('Updating device\'s system, please wait', color='yellow')
+
+	ssh = checkConnection(ctx)
+	if not ssh:
+		return
+
+	flag = commons.waitAnimation()
+	stdin, stdout, stderr = ssh.exec_command('sudo apt-get update && sudo apt-get upgrade -y')
+	line = stdout.readline()
+	while line:
+		click.secho(line, nl=False, color='yellow')
+		line = stdout.readline()
+
+	flag.clear()
+	commons.printSuccess('Device updated!')
+	commons.returnToMainMenu(ctx)
+
+
+@click.command()
+@click.pass_context
+def upgrade_system(ctx: click.Context):
+	click.secho('Upgrading device\'s system, please wait', color='yellow')
+
+	ssh = checkConnection(ctx)
+	if not ssh:
+		return
+
+	flag = commons.waitAnimation()
+	stdin, stdout, stderr = ssh.exec_command('sudo apt-get update && sudo apt-get dist-upgrade -y')
+	line = stdout.readline()
+	while line:
+		click.secho(line, nl=False, color='yellow')
+		line = stdout.readline()
+
+	flag.clear()
+	commons.printSuccess('Device upgraded!')
+	ctx.invoke(reboot)
+
+
+@click.command()
+@click.pass_context
+def sound_test(ctx: click.Context):
+	click.secho('Testing sound output....', color='yellow')
+
+	ssh = checkConnection(ctx)
+	if not ssh:
+		return
+
+	flag = commons.waitAnimation()
+	stdin, stdout, stderr = ssh.exec_command('sudo aplay /usr/share/sounds/alsa/Front_Center.wav')
+	line = stdout.readline()
+	click.secho(line)
+	flag.clear()
+	commons.returnToMainMenu(ctx)
+
+
+def checkConnection(ctx: click.Context):
 	global CONNECTED_TO
 
 	if not CONNECTED_TO:
 		commons.printError('Please connect to a server first')
-		commons.returnToMainMenu(ctx)
+		ssh = ctx.invoke(connect, return_to_main_menu=False)
 	else:
 		ssh = ctx.invoke(connect, return_to_main_menu=False)
 		if not ssh:
 			commons.printError('Something went wrong connecting to server')
 			commons.returnToMainMenu(ctx)
-			return
 
-		click.secho('Update device\'s system, please wait', color='yellow')
-		flag = commons.waitAnimation()
-		ssh.exec_command('sudo apt-get update && sudo apt-get dist-upgrade -y')
-		flag.clear()
-		commons.printSuccess('Device updated!')
-		commons.returnToMainMenu(ctx)
+	return ssh
