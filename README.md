@@ -1,3 +1,5 @@
+[![Upload Python Package](https://github.com/project-alice-assistant/AliceCLI/actions/workflows/python-publish.yml/badge.svg)](https://github.com/project-alice-assistant/AliceCLI/actions/workflows/python-publish.yml)
+
 # Project Alice CLI
 
 This is a Project Alice command line tool.
