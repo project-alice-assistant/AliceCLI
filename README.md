@@ -1,16 +1,22 @@
 # Project Alice CLI
 
-This is the Project Alice command line tool.
+This is a Project Alice command line tool.
 
 It simplifies to the maximum the installation and maintenance of Project Alice.
 
+It is not meant to be installed on the device that runs/will run Alice, but on your main computer.
+
+It handles connecting to network discoverable devices through SSH and generates RSA keys for a passwordless connection.
+
+Although it's a command line tool, it is using the wonderful "Click" package to offer an interactive menu for people not used or wanting to type commands.
+
 # Users
-Install this tool via pip:
+Install this tool via pip, on your main computer:
 
-`pip install projectalice-cli`
+`pip3 install projectalice-cli`
 
 
-# Devs
+# Devs of this tool
 - Clone this repository
 - Open a terminal on whatever OS you are
 - CD to the path where you cloned this repository
@@ -21,4 +27,8 @@ Install this tool via pip:
   `pip install --editable .`
   
 # Usage
-In your terminal, type `alice --help` to discover the available commands
+Type `alice` in your terminal to open the main menu or type `alice --help` to discover the available commands
+
+# Useful information
+This tool stores its configurations in `%USER_DIRECTORY%/.pacli`
+This tool stores its generated SSH certificates in `%USER_DIRECTORY%/.ssh`

@@ -15,7 +15,7 @@ from AliceCli.utils import commons
 from AliceCli.utils.decorators import checkConnection
 
 
-@click.command()
+@click.command(name='connect')
 @click.option('-i', '--ip_address', required=False, type=str, default='')
 @click.option('-p', '--port', required=False, type=int, default=22)
 @click.option('-u', '--user', required=False, type=str, default='pi')
@@ -107,10 +107,11 @@ def connect(ctx: click.Context, ip_address: str, port: int, user: str, password:
 	commons.returnToMainMenu(ctx)
 
 
-@click.command()
+@click.command(name='discover')
 @click.option('-n', '--network', required=False, type=str, default='')
+@click.option('-a', '--all_devices', is_flag=True)
 @click.pass_context
-def discover(ctx: click.Context, network: str):
+def discover(ctx: click.Context, network: str, all_devices: bool):
 	click.clear()
 	click.secho('Discovering devices on your network, please wait', fg='yellow')
 
@@ -125,22 +126,26 @@ def discover(ctx: click.Context, network: str):
 		flag = commons.waitAnimation()
 		scan = networkscan.Networkscan(network)
 		scan.run()
-		click.secho('Discovered potential devices:', fg='yellow')
+
+		if all_devices:
+			click.secho('Discovered devices:', fg='yellow')
+		else:
+			click.secho('Discovered potential devices:', fg='yellow')
 		for device in scan.list_of_hosts_found:
 			name = socket.gethostbyaddr(device)
 			if not name:
 				continue
 
-			if 'projectalice' in name[0].lower() or 'raspberrypi' in name[0].lower():
+			if all_devices or (not all_devices and ('projectalice' in name[0].lower() or 'raspberrypi' in name[0].lower())):
 				click.secho(f'{device}: {name[0].replace(".home", "")}', fg='yellow')
 
 		flag.clear()
 
-	commons.waitForAnyInput()
+	click.pause()
 	commons.returnToMainMenu(ctx)
 
 
-@click.command()
+@click.command(name='reboot')
 @click.pass_context
 @checkConnection
 def reboot(ctx: click.Context):
@@ -165,10 +170,10 @@ def reboot(ctx: click.Context):
 	commons.returnToMainMenu(ctx)
 
 
-@click.command()
+@click.command(name='updateSystem')
 @click.pass_context
 @checkConnection
-def update_system(ctx: click.Context):
+def updateSystem(ctx: click.Context):
 	click.secho('Updating device\'s system, please wait', color='yellow')
 
 	flag = commons.waitAnimation()
@@ -183,10 +188,10 @@ def update_system(ctx: click.Context):
 	commons.returnToMainMenu(ctx)
 
 
-@click.command()
+@click.command(name='upgradeSystem')
 @click.pass_context
 @checkConnection
-def upgrade_system(ctx: click.Context):
+def upgradeSystem(ctx: click.Context):
 	click.secho('Upgrading device\'s system, please wait', color='yellow')
 
 	flag = commons.waitAnimation()
@@ -201,11 +206,11 @@ def upgrade_system(ctx: click.Context):
 	ctx.invoke(reboot)
 
 
-@click.command()
+@click.command(name='soundtest')
 @click.pass_context
 @checkConnection
-def sound_test(ctx: click.Context):
-	click.secho('Testing sound output....', color='yellow')
+def soundTest(ctx: click.Context):
+	click.secho('Testing sound output...', color='yellow')
 
 	flag = commons.waitAnimation()
 	stdin, stdout, stderr = commons.SSH.exec_command('sudo aplay /usr/share/sounds/alsa/Front_Center.wav')

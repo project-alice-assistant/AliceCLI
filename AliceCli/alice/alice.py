@@ -4,10 +4,10 @@ from AliceCli.utils import commons
 from AliceCli.utils.decorators import checkConnection
 
 
-@click.command()
+@click.command(name='updateAlice')
 @click.pass_context
 @checkConnection
-def update_alice(ctx: click.Context):
+def updateAlice(ctx: click.Context):
 	click.secho('Updating Alice, please wait', color='yellow')
 
 	flag = commons.waitAnimation()
@@ -24,7 +24,7 @@ def update_alice(ctx: click.Context):
 	commons.returnToMainMenu(ctx)
 
 
-@click.command()
+@click.command(name='do')
 @click.option('-o', '--option', required=True, type=click.Choice(['start', 'stop', 'restart', 'enable', 'disable'], case_sensitive=False))
 @click.pass_context
 @checkConnection

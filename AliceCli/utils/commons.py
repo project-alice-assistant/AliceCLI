@@ -29,10 +29,6 @@ def waitAnimation() -> Event:
 	return flag
 
 
-def waitForAnyInput():
-	input('\nPress any key to return to main menu')
-
-
 def _animation(flag: Event):
 	animation = "|/-\\"
 	idx = 0

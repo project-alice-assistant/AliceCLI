@@ -3,8 +3,8 @@ import sys
 import click
 from PyInquirer import Separator, prompt
 
-from AliceCli.alice.alice import systemctl, update_alice
-from AliceCli.utils.utils import connect, discover, reboot, sound_test, update_system, upgrade_system
+from AliceCli.alice.alice import systemctl, updateAlice
+from AliceCli.utils.utils import connect, discover, reboot, soundTest, updateSystem, upgradeSystem
 
 
 @click.command(name='main_menu')
@@ -56,13 +56,13 @@ def mainMenu(ctx: click.Context):
 	elif answers['mainMenu'] == 'Restart device':
 		ctx.invoke(reboot, ctx)
 	elif answers['mainMenu'] == 'Update system':
-		ctx.invoke(update_system, ctx)
+		ctx.invoke(updateSystem, ctx)
 	elif answers['mainMenu'] == 'Upgrade system':
-		ctx.invoke(upgrade_system, ctx)
+		ctx.invoke(upgradeSystem, ctx)
 	elif answers['mainMenu'] == 'Sound test':
-		ctx.invoke(sound_test, ctx)
+		ctx.invoke(soundTest, ctx)
 	elif answers['mainMenu'] == 'Update Alice':
-		ctx.invoke(update_alice, ctx)
+		ctx.invoke(updateAlice, ctx)
 	elif answers['mainMenu'] == 'Restart Alice':
 		ctx.invoke(systemctl, ctx, option='restart')
 	elif answers['mainMenu'] == 'Start Alice':
