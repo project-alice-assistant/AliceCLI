@@ -8,7 +8,7 @@ It is not meant to be installed on the device that runs/will run Alice, but on y
 
 It handles connecting to network discoverable devices through SSH and generates RSA keys for a passwordless connection.
 
-Although it's a command line tool, it is using the wonderful "Click" package to offer an interactive menu for people not used or wanting to type commands.
+Although it's a command line tool, made possible thanks to the awesome "Click" package, it is using the wonderful "PyInquirer" package to offer an interactive menu for people not used or wanting to type commands.
 
 # Users
 Install this tool via pip, on your main computer:
@@ -31,4 +31,5 @@ Type `alice` in your terminal to open the main menu or type `alice --help` to di
 
 # Useful information
 This tool stores its configurations in `%USER_DIRECTORY%/.pacli`
+
 This tool stores its generated SSH certificates in `%USER_DIRECTORY%/.ssh`

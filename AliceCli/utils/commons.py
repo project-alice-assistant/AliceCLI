@@ -1,39 +1,167 @@
+import json
 import re
 import sys
 import time
+import uuid
+from pathlib import Path
+from typing import Optional
+
 import click
 from threading import Event, Thread
 
+import paramiko
 from PyInquirer import prompt
 
 import AliceCli.MainMenu as MainMenu
-from AliceCli.utils import utils
 
 IP_REGEX = re.compile(r'^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')
-SSH = None
+SSH: Optional[paramiko.SSHClient] = None
+CONNECTED_TO: str = ''
+ANIMATION_FLAG = Event()
+ANIMATION_THREAD: Optional[Thread] = None
+
+@click.command(name='connect')
+@click.option('-i', '--ip_address', required=False, type=str, default='')
+@click.option('-p', '--port', required=False, type=int, default=22)
+@click.option('-u', '--user', required=False, type=str, default='pi')
+@click.option('-pw', '--password', required=False, type=str, default='')
+@click.option('-r', '--return_to_main_menu', required=False, type=bool, default=True)
+@click.pass_context
+def connect(ctx: click.Context, ip_address: str, port: int, user: str, password: str, return_to_main_menu: bool) -> Optional[paramiko.SSHClient]: #NOSONAR
+	global SSH, IP_REGEX, CONNECTED_TO
+	remoteAuthorizedKeysFile = '~/.ssh/authorized_keys'
+	confFile = Path(Path.home(), '.pacli/configs.json')
+	confFile.parent.mkdir(parents=True, exist_ok=True)
+	if not confFile.exists():
+		confs = dict()
+		confs['servers'] = dict()
+		confFile.write_text(json.dumps(confs))
+	else:
+		confs = json.loads(confFile.read_text())
+
+	if not ip_address:
+		question = [
+			{
+				'type'    : 'input',
+				'name'    : 'ip_address',
+				'message' : 'Please enter the device IP address',
+				'validate': lambda ip: IP_REGEX.match(ip) is not None
+			}
+		]
+
+		answers = prompt(questions=question)
+		ip_address = answers['ip_address']
+
+	data = confs['servers'].get(ip_address, dict()).get('keyFile')
+	if data:
+		user = confs['servers'][ip_address]['user']
+		keyFile = Path(Path.home(), f".ssh/{confs['servers'][ip_address]['keyFile']}")
+
+		if not keyFile.exists():
+			printError('Declared server is using a non existing RSA key file, removing entry and asking for password.')
+			confs['servers'].pop(ip_address, None)
+			keyFile = None
+	else:
+		keyFile = None
+
+	if not keyFile and not password:
+		question = [
+			{
+				'type'   : 'password',
+				'name'   : 'password',
+				'message': 'Please enter the connection password'
+			}
+		]
+
+		answers = prompt(questions=question)
+		password = answers.get('password', password)
+
+	try:
+		if SSH:
+			disconnect()
+
+		ssh = paramiko.SSHClient()
+		ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy)
+
+		waitAnimation()
+
+		if password:
+			ssh.connect(hostname=ip_address, port=port, username=user, password=password)
+		else:
+			key = paramiko.RSAKey.from_private_key_file(str(keyFile))
+			ssh.connect(hostname=ip_address, port=port, username=user, pkey=key)
+
+	except Exception as e:
+		printError(f'Failed connecting to device: {e}')
+	else:
+		printSuccess('Successfully connected to device')
+		SSH = ssh
+		CONNECTED_TO = ip_address
+		if ip_address not in confs['servers']:
+			filename = f'id_rsa_{str(uuid.uuid4())}'
+			keyFile = Path(Path.home(), f'.ssh/{filename}')
+			confs['servers'][ip_address] = {
+				'keyFile': filename,
+				'user': user
+			}
+			confFile.write_text(json.dumps(confs))
+
+			key = paramiko.RSAKey.generate(4096)
+			key.write_private_key_file(filename=str(keyFile))
+
+			pubKeyFile = keyFile.with_suffix('.pub')
+			pubKeyFile.write_text(key.get_base64())
+			ssh.exec_command(f"echo \"ssh-rsa {pubKeyFile.read_text()} Project Alice RSA key\" | exec sh -c 'cd ; umask 077 ; mkdir -p .ssh && cat >> {remoteAuthorizedKeysFile} || exit 1 ; if type restorecon >/dev/null 2>&1 ; then restorecon -F .ssh ${remoteAuthorizedKeysFile} ; fi'")
+
+		if not return_to_main_menu:
+			return ssh
+
+	if return_to_main_menu:
+		returnToMainMenu(ctx)
 
 def printError(text: str):
+	ANIMATION_FLAG.clear()
 	click.secho(message=f'✘ {text}', fg='red')
 	time.sleep(2)
 
 
 def printSuccess(text: str):
+	ANIMATION_FLAG.clear()
 	click.secho(message=f'✔ {text}', fg='green')
 	time.sleep(2)
 
 
-def waitAnimation() -> Event:
-	flag = Event()
-	thread = Thread(target=_animation, kwargs={'flag': flag}, daemon=True)
-	thread.start()
-	return flag
+def disconnect():
+	global SSH, CONNECTED_TO
+	if SSH:
+		SSH.close()
+		SSH = None
+		CONNECTED_TO = ''
+		click.secho(message=f'✔ Disconnected', fg='green')
 
 
-def _animation(flag: Event):
-	animation = "|/-\\"
+def waitAnimation():
+	global ANIMATION_THREAD
+
+	if ANIMATION_FLAG.is_set():
+		ANIMATION_FLAG.clear()
+
+	if ANIMATION_THREAD:
+		ANIMATION_THREAD.join(timeout=1)
+
+	ANIMATION_THREAD = Thread(target=_animation, daemon=True)
+	ANIMATION_THREAD.start()
+
+
+def stopAnimation():
+	ANIMATION_FLAG.clear()
+
+
+def _animation():
+	animation = '|/-\\'
 	idx = 0
-	flag.set()
-	while flag.is_set():
+	ANIMATION_FLAG.set()
+	while ANIMATION_FLAG.is_set():
 		click.secho(animation[idx % len(animation)] + '\r', nl=False, fg='yellow')
 		idx += 1
 		time.sleep(0.1)
@@ -60,4 +188,5 @@ def askReturnToMainMenu(ctx: click.Context):
 
 
 def returnToMainMenu(ctx: click.Context):
+	stopAnimation()
 	ctx.invoke(MainMenu.mainMenu)

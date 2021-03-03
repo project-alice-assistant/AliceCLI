@@ -4,7 +4,9 @@ import click
 from PyInquirer import Separator, prompt
 
 from AliceCli.alice.alice import systemctl, updateAlice
-from AliceCli.utils.utils import connect, discover, reboot, soundTest, updateSystem, upgradeSystem
+from AliceCli.install.install import installAlice
+from AliceCli.utils.commons import connect
+from AliceCli.utils.utils import discover, reboot, soundTest, updateSystem, upgradeSystem
 
 
 @click.command(name='main_menu')
@@ -16,15 +18,15 @@ def mainMenu(ctx: click.Context):
 			{
 				'type': 'list',
 				'name': 'mainMenu',
-				'message': 'This is the main menu of Alice CLI. Please select an option.',
+				'message': 'Please select an option',
 				'choices': [
 					'Discover devices on network',
 					'Connect to a device',
 					'Sound test',
 					Separator(),
-					'Install your sound device',
+					'WIP Install your sound device',
 					'Install Alice',
-					'Install Alice satellite',
+					'WIP Install Alice satellite',
 					Separator(),
 					'Start Alice',
 					'Restart Alice',
@@ -32,7 +34,7 @@ def mainMenu(ctx: click.Context):
 					'Enable Alice service',
 					'Disable Alice service',
 					Separator(),
-					'Uninstall Alice',
+					'WIP Uninstall Alice',
 					Separator(),
 					'Update Alice',
 					'Update system',
@@ -50,26 +52,30 @@ def mainMenu(ctx: click.Context):
 	if answers['mainMenu'] == 'Exit':
 		sys.exit(0)
 	elif answers['mainMenu'] == 'Discover devices on network':
-		ctx.invoke(discover, ctx)
+		ctx.invoke(discover)
 	elif answers['mainMenu'] == 'Connect to a device':
-		ctx.invoke(connect, ctx)
-	elif answers['mainMenu'] == 'Restart device':
-		ctx.invoke(reboot, ctx)
+		ctx.invoke(connect)
+	elif answers['mainMenu'] == 'Reboot device':
+		ctx.invoke(reboot)
 	elif answers['mainMenu'] == 'Update system':
-		ctx.invoke(updateSystem, ctx)
+		ctx.invoke(updateSystem)
 	elif answers['mainMenu'] == 'Upgrade system':
-		ctx.invoke(upgradeSystem, ctx)
+		ctx.invoke(upgradeSystem)
 	elif answers['mainMenu'] == 'Sound test':
-		ctx.invoke(soundTest, ctx)
+		ctx.invoke(soundTest)
 	elif answers['mainMenu'] == 'Update Alice':
-		ctx.invoke(updateAlice, ctx)
+		ctx.invoke(updateAlice)
 	elif answers['mainMenu'] == 'Restart Alice':
-		ctx.invoke(systemctl, ctx, option='restart')
+		ctx.invoke(systemctl, option='restart')
 	elif answers['mainMenu'] == 'Start Alice':
-		ctx.invoke(systemctl, ctx, option='start')
+		ctx.invoke(systemctl, option='start')
 	elif answers['mainMenu'] == 'Stop Alice':
-		ctx.invoke(systemctl, ctx, option='stop')
+		ctx.invoke(systemctl, option='stop')
 	elif answers['mainMenu'] == 'Enable Alice service':
-		ctx.invoke(systemctl, ctx, option='enable')
+		ctx.invoke(systemctl, option='enable')
 	elif answers['mainMenu'] == 'Disable Alice service':
-		ctx.invoke(systemctl, ctx, option='disable')
+		ctx.invoke(systemctl, option='disable')
+	elif answers['mainMenu'] == 'Install Alice':
+		ctx.invoke(installAlice)
+	else:
+		ctx.invoke(mainMenu)

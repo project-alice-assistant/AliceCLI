@@ -5,9 +5,10 @@ from setuptools import find_packages, setup
 
 setup(
 	name='projectalice-cli',
-	version='0.0.5',
+	version='0.0.6',
 	long_description=Path('README.md').read_text(encoding='utf8'),
 	long_description_content_type='text/markdown',
+	python_requires = '>=3.8',
 	packages=find_packages(),
 	include_package_data=True,
 	url='https://github.com/project-alice-assistant/AliceCLI',
@@ -20,15 +21,17 @@ setup(
         'Click',
 		'paramiko',
 		'PyInquirer',
-		'networkscan'
+		'networkscan',
+		'pyyaml',
+		'requests'
     ],
 	classifiers=[
-		"Development Status :: 2 - Pre-Alpha",
+		"Development Status :: 3 - Alpha",
 		"Environment :: Console",
 		"Intended Audience :: End Users/Desktop",
 		"License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
 		"Operating System :: OS Independent",
-		"Programming Language :: Python :: 3.7",
+		"Programming Language :: Python :: 3.8",
 		"Topic :: Home Automation",
 		"Topic :: System :: Installation/Setup"
 	],
