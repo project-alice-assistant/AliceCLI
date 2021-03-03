@@ -151,6 +151,7 @@ def waitAnimation():
 
 	ANIMATION_THREAD = Thread(target=_animation, daemon=True)
 	ANIMATION_THREAD.start()
+	time.sleep(1)
 
 
 def stopAnimation():

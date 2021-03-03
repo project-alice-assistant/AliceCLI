@@ -8,6 +8,72 @@ import requests
 
 from AliceCli.utils import commons
 from AliceCli.utils.decorators import checkConnection
+from AliceCli.utils.utils import reboot
+
+
+@click.command(name="installSoundDevice")
+@click.option('-d', '--device', type=click.Choice(['respeaker2', 'respeaker4', 'respeaker4MicLinearArray', 'respeaker6MicArray'], case_sensitive=False))
+@click.pass_context
+@checkConnection
+def installSoundDevice(ctx: click.Context, device: str):
+	click.secho('Installing audio hardware', color='yellow')
+	commons.waitAnimation()
+	if not device:
+		device = getDeviceName(ctx)
+		if not device:
+			return
+
+	ctx.invoke(uninstallSoundDevice, device=device, return_to_main_menu=False)
+	commons.waitAnimation()
+	if device.lower() in {'respeaker2', 'respeaker4', 'respeaker4miclineararray', 'respeaker6micarray'}:
+		sshCmd('git clone https://github.com/HinTak/seeed-voicecard.git ~/seeed-voicecard/')
+		sshCmd('git -C ~/seeed-voicecard/ checkout v5.9 && git -C ~/seeed-voicecard/ pull')
+		sshCmd('cd ~/seeed-voicecard/ && sudo ./install.sh')
+		ctx.invoke(reboot, return_to_main_menu=False)
+		commons.printSuccess('Device installed!')
+
+	commons.returnToMainMenu(ctx)
+
+
+@click.command(name="uninstallSoundDevice")
+@click.option('-d', '--device', type=click.Choice(['respeaker2', 'respeaker4', 'respeaker4MicLinearArray', 'respeaker6MicArray'], case_sensitive=False))
+@click.pass_context
+@checkConnection
+def uninstallSoundDevice(ctx: click.Context, device: str, return_to_main_menu: bool = True): #NOSONAR
+	click.secho('Uninstalling audio hardware', color='yellow')
+	commons.waitAnimation()
+	if not device:
+		device = getDeviceName(ctx)
+		if not device:
+			return
+
+	if device.lower() in {'respeaker2', 'respeaker4', 'respeaker4miclineararray', 'respeaker6micarray'}:
+		result = sshCmdWithReturn('test -d ~/seeed-voicecard/ && echo "1"')[0].readline()
+		if result:
+			sshCmd('cd ~/seeed-voicecard/ && sudo ./uninstall.sh')
+			sshCmd('sudo rm -rf ~/seeed-voicecard/')
+			ctx.invoke(reboot, return_to_main_menu=return_to_main_menu)
+			commons.printSuccess('Device uninstalled!')
+
+	if return_to_main_menu:
+		commons.returnToMainMenu(ctx)
+
+
+def getDeviceName(ctx: click.Context) -> str:
+	answer = prompt(questions={
+		'type'   : 'list',
+		'name'   : 'device',
+		'message': 'Select your device',
+		'choices': ['respeaker2', 'respeaker4', 'respeaker4MicLinearArray', 'respeaker6MicArray']
+	})
+
+	if not answer:
+		commons.printError('Cannot continue without device information')
+		commons.returnToMainMenu(ctx)
+		return ''
+
+	return answer['device']
+
 
 
 @click.command(name='installAlice')

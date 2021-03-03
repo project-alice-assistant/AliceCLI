@@ -4,7 +4,7 @@ import click
 from PyInquirer import Separator, prompt
 
 from AliceCli.alice.alice import systemctl, updateAlice
-from AliceCli.install.install import installAlice
+from AliceCli.install.install import installAlice, installSoundDevice, uninstallSoundDevice
 from AliceCli.utils.commons import connect
 from AliceCli.utils.utils import discover, reboot, soundTest, updateSystem, upgradeSystem
 
@@ -24,7 +24,8 @@ def mainMenu(ctx: click.Context):
 					'Connect to a device',
 					'Sound test',
 					Separator(),
-					'WIP Install your sound device',
+					'Install your sound device',
+					'Uninstall your sound device',
 					'Install Alice',
 					'WIP Install Alice satellite',
 					Separator(),
@@ -77,5 +78,9 @@ def mainMenu(ctx: click.Context):
 		ctx.invoke(systemctl, option='disable')
 	elif answers['mainMenu'] == 'Install Alice':
 		ctx.invoke(installAlice)
+	elif answers['mainMenu'] == 'Install your sound device':
+		ctx.invoke(installSoundDevice)
+	elif answers['mainMenu'] == 'Uninstall your sound device':
+		ctx.invoke(uninstallSoundDevice)
 	else:
 		ctx.invoke(mainMenu)

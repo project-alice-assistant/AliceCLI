@@ -48,7 +48,7 @@ def discover(ctx: click.Context, network: str, all_devices: bool): #NOSONAR
 @click.command(name='reboot')
 @click.pass_context
 @checkConnection
-def reboot(ctx: click.Context):
+def reboot(ctx: click.Context, return_to_main_menu: bool = True): #NOSONAR
 	click.secho('Rebooting device, please wait', color='yellow')
 
 	commons.waitAnimation()
@@ -59,12 +59,15 @@ def reboot(ctx: click.Context):
 		ctx.invoke(commons.connect, ip_address=address, return_to_main_menu=False)
 		if commons.SSH:
 			commons.printSuccess('Device rebooted!')
-			commons.returnToMainMenu(ctx)
+			if return_to_main_menu:
+				commons.returnToMainMenu(ctx)
 			return
 		i += 1 #NOSONAR
 
 	commons.printError('Failed rebooting device')
-	commons.returnToMainMenu(ctx)
+
+	if return_to_main_menu:
+		commons.returnToMainMenu(ctx)
 
 
 @click.command(name='updateSystem')
