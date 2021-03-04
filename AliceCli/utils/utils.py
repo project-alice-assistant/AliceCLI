@@ -1,6 +1,7 @@
 import socket
 import time
 import click
+from PyInquirer import prompt
 from networkscan import networkscan
 
 from AliceCli.utils import commons
@@ -31,6 +32,8 @@ def discover(ctx: click.Context, network: str, all_devices: bool): #NOSONAR
 			click.secho('Discovered devices:', fg='yellow')
 		else:
 			click.secho('Discovered potential devices:', fg='yellow')
+
+		devices = list()
 		for device in scan.list_of_hosts_found:
 			name = socket.gethostbyaddr(device)
 			if not name:
@@ -38,10 +41,21 @@ def discover(ctx: click.Context, network: str, all_devices: bool): #NOSONAR
 
 			if all_devices or (not all_devices and ('projectalice' in name[0].lower() or 'raspberrypi' in name[0].lower())):
 				click.secho(f'{device}: {name[0].replace(".home", "")}', fg='yellow')
+				devices.append(device)
 
 		commons.stopAnimation()
 
-	click.pause()
+		devices.append('Return to main menu')
+		answer = prompt(questions={
+			'type'   : 'list',
+			'name'   : 'device',
+			'message': 'Select the device you want to connect to',
+			'choices': devices
+		})
+
+		if answer['device'] != 'Return to main menu':
+			ctx.invoke(commons.connect, ip_address=answer['device'])
+
 	commons.returnToMainMenu(ctx)
 
 
