@@ -4,9 +4,9 @@ import click
 from PyInquirer import Separator, prompt
 
 from AliceCli.alice.alice import systemctl, updateAlice
-from AliceCli.install.install import installAlice, installSoundDevice, uninstallSoundDevice
-from AliceCli.utils.commons import connect
-from AliceCli.utils.utils import discover, reboot, soundTest, updateSystem, upgradeSystem
+from AliceCli.install.install import installAlice, installSoundDevice, prepareSdCard, uninstallSoundDevice
+from AliceCli.utils.commons import discover, connect
+from AliceCli.utils.utils import changeHostname, changePassword, reboot, soundTest, updateSystem, upgradeSystem
 
 
 @click.command(name='main_menu')
@@ -22,11 +22,11 @@ def mainMenu(ctx: click.Context):
 				'choices': [
 					'Discover devices on network',
 					'Connect to a device',
-					'Sound test',
 					Separator(),
+					'Prepare your SD card',
+					'Install Alice',
 					'Install your sound device',
 					'Uninstall your sound device',
-					'Install Alice',
 					Separator(),
 					'Start Alice',
 					'Restart Alice',
@@ -34,6 +34,9 @@ def mainMenu(ctx: click.Context):
 					'Enable Alice service',
 					'Disable Alice service',
 					Separator(),
+					'Sound test',
+					'Change device\'s password',
+					'Set device\'s name',
 					'Update Alice',
 					'Update system',
 					'Upgrade system',
@@ -79,5 +82,11 @@ def mainMenu(ctx: click.Context):
 		ctx.invoke(installSoundDevice)
 	elif answers['mainMenu'] == 'Uninstall your sound device':
 		ctx.invoke(uninstallSoundDevice)
+	elif answers['mainMenu'] == 'Prepare your SD card':
+		ctx.invoke(prepareSdCard)
+	elif answers['mainMenu'] == 'Change device\'s password':
+		ctx.invoke(changePassword)
+	elif answers['mainMenu'] == 'Set device\'s name':
+		ctx.invoke(changeHostname)
 	else:
 		ctx.invoke(mainMenu)

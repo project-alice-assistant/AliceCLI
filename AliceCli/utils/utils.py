@@ -1,60 +1,104 @@
-import socket
 import time
 import click
 from PyInquirer import prompt
-from networkscan import networkscan
 
 from AliceCli.utils import commons
 from AliceCli.utils.decorators import checkConnection
 
 
-@click.command(name='discover')
-@click.option('-n', '--network', required=False, type=str, default='')
-@click.option('-a', '--all_devices', is_flag=True)
+@click.command(name='changePassword')
+@click.option('-c', '--current_password', type=str, required=True)
+@click.option('-p', '--password', type=str, required=True)
 @click.pass_context
-def discover(ctx: click.Context, network: str, all_devices: bool): #NOSONAR
-	click.clear()
-	click.secho('Discovering devices on your network, please wait', fg='yellow')
+@checkConnection
+def changePassword(ctx: click.Context, current_password: str = None, password: str = None):
+	click.secho('Changing password', color='yellow')
 
-	ip = commons.IP_REGEX.search(socket.gethostbyname(socket.gethostname()))
-	if not ip and not network:
-		commons.printError("Couldn't retrieve local ip address")
+	if not password or not current_password:
+		questions = [
+			{
+				'type'    : 'password',
+				'name'    : 'cpassword',
+				'message' : 'Enter current password (default: raspberry)',
+				'default' : 'raspberry',
+				'validate': lambda pwd: len(pwd) > 0
+			},
+			{
+				'type'    : 'password',
+				'name'    : 'npassword',
+				'message' : 'Enter new password',
+				'validate': lambda pwd: len(pwd) > 0
+			},
+			{
+				'type'    : 'password',
+				'name'    : 'npassword2',
+				'message' : 'Confirm new password',
+				'validate': lambda pwd: len(pwd) > 0
+			}
+		]
+
+		answers = prompt(questions=questions)
+
+		if not answers:
+			commons.returnToMainMenu(ctx)
+
+		if answers['npassword'] != answers['npassword2']:
+			commons.printError('New passwords do not match')
+			commons.returnToMainMenu(ctx)
+			return
+
+		current_password = answers['cpassword']
+		password = answers['password']
+
+	commons.waitAnimation()
+	stdin, stdout, stderr = commons.SSH.exec_command(f'echo -e "{current_password}\n{password}\n{password}" | passwd')
+
+	error = stderr.readline()
+	if 'successfully' in error.lower():
+		commons.printSuccess('Password changed!')
 	else:
-		if not network:
-			network = f"{'.'.join(ip[0].split('.')[0:3])}.0/24"
+		commons.printError(f'Something went wrong: {error}')
 
-		click.secho(f'Scanning network: {network}', fg='yellow')
-		commons.waitAnimation()
-		scan = networkscan.Networkscan(network)
-		scan.run()
+	commons.returnToMainMenu(ctx)
 
-		if all_devices:
-			click.secho('Discovered devices:', fg='yellow')
-		else:
-			click.secho('Discovered potential devices:', fg='yellow')
 
-		devices = list()
-		for device in scan.list_of_hosts_found:
-			name = socket.gethostbyaddr(device)
-			if not name:
-				continue
+@click.command(name='changeHostname')
+@click.option('-n', '--hostname', type=str, callback=commons.validateHostname, required=False)
+@click.pass_context
+@checkConnection
+def changeHostname(ctx: click.Context, hostname: str):
+	click.secho('Changing device\'s hostname', color='yellow')
 
-			if all_devices or (not all_devices and ('projectalice' in name[0].lower() or 'raspberrypi' in name[0].lower())):
-				click.secho(f'{device}: {name[0].replace(".home", "")}', fg='yellow')
-				devices.append(device)
+	if not hostname:
+		question = [
+			{
+				'type'    : 'input',
+				'name'    : 'hostname',
+				'message' : 'Enter new device name',
+				'default' : 'ProjectAlice',
+				'validate': lambda name: commons.validateHostname(name) is not None
+			}
+		]
 
-		commons.stopAnimation()
+		answer = prompt(questions=question)
 
-		devices.append('Return to main menu')
-		answer = prompt(questions={
-			'type'   : 'list',
-			'name'   : 'device',
-			'message': 'Select the device you want to connect to',
-			'choices': devices
-		})
+		if not answer:
+			commons.returnToMainMenu(ctx)
 
-		if answer['device'] != 'Return to main menu':
-			ctx.invoke(commons.connect, ip_address=answer['device'])
+		hostname = answer['hostname']
+
+
+	commons.waitAnimation()
+	commons.SSH.exec_command(f"sudo hostnamectl set-hostname '{hostname}'")
+	ctx.invoke(reboot, ctx, return_to_main_menu=False)
+
+	commons.waitAnimation()
+	stdin, stdout, stderr = commons.SSH.exec_command('hostname')
+
+	if stdout.readline().lower().strip() == hostname.lower().strip():
+		commons.printSuccess('Device name changed!')
+	else:
+		commons.printError('Failed changing device name...')
 
 	commons.returnToMainMenu(ctx)
 

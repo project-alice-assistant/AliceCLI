@@ -1,5 +1,6 @@
 import json
 import re
+import socket
 import sys
 import time
 import uuid
@@ -11,6 +12,7 @@ from threading import Event, Thread
 
 import paramiko
 from PyInquirer import prompt
+from networkscan import networkscan
 
 import AliceCli.MainMenu as MainMenu
 
@@ -20,10 +22,69 @@ CONNECTED_TO: str = ''
 ANIMATION_FLAG = Event()
 ANIMATION_THREAD: Optional[Thread] = None
 
+
+@click.command(name='discover')
+@click.option('-n', '--network', required=False, type=str, default='')
+@click.option('-a', '--all_devices', is_flag=True)
+@click.pass_context
+def discover(ctx: click.Context, network: str, all_devices: bool, return_to_main_menu: bool = True): #NOSONAR
+	click.clear()
+	click.secho('Discovering devices on your network, please wait', fg='yellow')
+
+	ip = IP_REGEX.search(socket.gethostbyname(socket.gethostname()))
+	if not ip and not network:
+		printError("Couldn't retrieve local ip address")
+	else:
+		if not network:
+			network = f"{'.'.join(ip[0].split('.')[0:3])}.0/24"
+
+		click.secho(f'Scanning network: {network}', fg='yellow')
+		waitAnimation()
+		scan = networkscan.Networkscan(network)
+		scan.run()
+
+		if all_devices:
+			click.secho('Discovered devices:', fg='yellow')
+		else:
+			click.secho('Discovered potential devices:', fg='yellow')
+
+		devices = list()
+		for device in scan.list_of_hosts_found:
+			try:
+				name = socket.gethostbyaddr(device)
+				if not name:
+					continue
+
+				if all_devices or (not all_devices and ('projectalice' in name[0].lower() or 'raspberrypi' in name[0].lower())):
+					click.secho(f'{device}: {name[0].replace(".home", "")}', fg='yellow')
+					devices.append(device)
+			except:
+				continue #If no name, we don't need the device anyway
+
+		stopAnimation()
+
+		devices.append('Return to main menu') #NOSONAR
+		answer = prompt(questions={
+			'type'   : 'list',
+			'name'   : 'device',
+			'message': 'Select the device you want to connect to',
+			'choices': devices
+		})
+
+		if not answer or answer['device'] == 'Return to main menu':
+			returnToMainMenu(ctx)
+
+		if answer['device'] != 'Return to main menu':
+			ctx.invoke(connect, ip_address=answer['device'], return_to_main_menu=return_to_main_menu)
+
+	if return_to_main_menu:
+		returnToMainMenu(ctx)
+
+
 @click.command(name='connect')
 @click.option('-i', '--ip_address', required=False, type=str, default='')
 @click.option('-p', '--port', required=False, type=int, default=22)
-@click.option('-u', '--user', required=False, type=str, default='pi')
+@click.option('-u', '--user', required=False, type=str)
 @click.option('-pw', '--password', required=False, type=str, default='')
 @click.option('-r', '--return_to_main_menu', required=False, type=bool, default=True)
 @click.pass_context
@@ -64,6 +125,18 @@ def connect(ctx: click.Context, ip_address: str, port: int, user: str, password:
 	else:
 		keyFile = None
 
+	if not keyFile and not user:
+		question = [
+			{
+				'type'   : 'input',
+				'name'   : 'user',
+				'message': 'Please enter username'
+			}
+		]
+
+		answers = prompt(questions=question)
+		user = answers.get('user', user)
+
 	if not keyFile and not password:
 		question = [
 			{
@@ -93,6 +166,11 @@ def connect(ctx: click.Context, ip_address: str, port: int, user: str, password:
 
 	except Exception as e:
 		printError(f'Failed connecting to device: {e}')
+		if ip_address in confs['servers'] and not password:
+			confs['servers'].pop(ip_address, None)
+			confFile.write_text(json.dumps(confs))
+			ctx.invoke(connect, ip_address=ip_address, user=user, return_to_main_menu=return_to_main_menu)
+			return
 	else:
 		printSuccess('Successfully connected to device')
 		SSH = ssh
@@ -191,3 +269,17 @@ def askReturnToMainMenu(ctx: click.Context):
 def returnToMainMenu(ctx: click.Context):
 	stopAnimation()
 	ctx.invoke(MainMenu.mainMenu)
+
+
+def validateHostname(hostname: str) -> str:
+	if not hostname:
+		raise click.BadParameter('Hostname cannot be empty')
+
+	if len(hostname) > 253:
+		raise click.BadParameter('Hostname maximum length is 253')
+
+	allowed = re.compile(r'^([\w]*)$', re.IGNORECASE)
+	if allowed.match(hostname):
+		return hostname
+	else:
+		raise click.BadParameter('Hostname cannot contain special characters')

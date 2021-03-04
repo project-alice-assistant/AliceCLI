@@ -1,7 +1,11 @@
+import os
+import shutil
 from pathlib import Path
 from typing import Tuple
 
 import click
+import psutil as psutil
+import usb.core
 import yaml
 from PyInquirer import prompt
 import requests
@@ -197,6 +201,68 @@ def installAlice(ctx: click.Context, force: bool):
 	sshCmd('python3 ~/ProjectAlice/main.py')
 
 	commons.printSuccess('Alice is installing!')
+	commons.returnToMainMenu(ctx)
+
+
+@click.command(name='prepareSdCard')
+@click.pass_context
+def prepareSdCard(ctx: click.Context):
+
+	drives = list()
+	for dp in psutil.disk_partitions():
+		if 'removable' not in dp.opts.lower():
+			continue
+		try:
+			if psutil.disk_usage(dp.device).total / 1024 / 1024 < 300: # boot partitions are usually tiny
+				drives.append(dp.device)
+		except:
+			continue # If we can't read the partition, we can't write it either
+
+	questions = [
+		{
+			'type'   : 'list',
+			'name'   : 'drive',
+			'message': 'Select your SD card drive (boot partition)',
+			'choices': drives
+		},
+		{
+			'type'   : 'input',
+			'name'   : 'ssid',
+			'message': 'Please enter the name of your Wifi network',
+			'validate': lambda c: len(c) > 0
+		},
+		{
+			'type'   : 'input',
+			'name'   : 'country',
+			'message': 'Please enter your country code (example: CH, US, DE, FR etc)',
+			'validate': lambda c: len(c) == 2
+		},
+		{
+			'type'   : 'password',
+			'name'   : 'password',
+			'message': 'Please enter your Wifi network\'s key'
+		}
+	]
+
+	answers = prompt(questions=questions)
+
+	if not answers:
+		commons.returnToMainMenu(ctx)
+
+	Path(answers['drive'], 'ssh').touch()
+
+	content = f'country={answers["country"]}\n'
+	content += 'ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev\n'
+	content += 'update_config=1\n'
+	content += 'network={\n'
+	content += f'\tssid="{answers["ssid"]}"\n'
+	content += '\tscan_ssid=1\n'
+	content += f'\tpsk="{answers["password"]}"\n'
+	content += '\tkey_mgmt=WPA-PSK\n'
+	content += '}'
+	Path(answers['drive'], 'wpa_supplicant.conf').write_text(content)
+
+	commons.printSuccess('SD card ready, please plug it in your device and boot it!')
 	commons.returnToMainMenu(ctx)
 
 
