@@ -22,7 +22,7 @@ Install this tool via pip, on your main computer:
 - Clone this repository
 - Open a terminal on whatever OS you are
 - CD to the path where you cloned this repository
-- Create a python 3.7+ virtual environement:
+- Create a python 3.8+ virtual environement:
   `python -m venv`
 - Activate your virtual environement
 - Install the package in dev mode:
