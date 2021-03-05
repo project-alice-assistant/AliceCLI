@@ -1,11 +1,8 @@
-import os
-import shutil
 from pathlib import Path
 from typing import Tuple
 
 import click
 import psutil as psutil
-import usb.core
 import yaml
 from PyInquirer import prompt
 import requests
