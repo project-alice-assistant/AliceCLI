@@ -14,8 +14,6 @@ import paramiko
 from PyInquirer import prompt
 from networkscan import networkscan
 
-import AliceCli.MainMenu as MainMenu
-
 IP_REGEX = re.compile(r'^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')
 SSH: Optional[paramiko.SSHClient] = None
 CONNECTED_TO: str = ''
@@ -294,6 +292,7 @@ def askReturnToMainMenu(ctx: click.Context):
 
 
 def returnToMainMenu(ctx: click.Context):
+	import AliceCli.MainMenu as MainMenu
 	stopAnimation()
 	ctx.invoke(MainMenu.mainMenu)
 
