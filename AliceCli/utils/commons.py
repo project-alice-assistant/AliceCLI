@@ -209,13 +209,19 @@ def printSuccess(text: str):
 	time.sleep(2)
 
 
+def printInfo(text: str):
+	ANIMATION_FLAG.clear()
+	click.secho(message=f'▷ {text}', fg='yellow')
+	time.sleep(0.5)
+
+
 def disconnect():
 	global SSH, CONNECTED_TO
 	if SSH:
 		SSH.close()
 		SSH = None
 		CONNECTED_TO = ''
-		click.secho(message=f'✔ Disconnected', fg='green')
+		printSuccess('Disconnected')
 
 
 def waitAnimation():
@@ -232,6 +238,20 @@ def waitAnimation():
 	time.sleep(1)
 
 
+def ctrlCExplained():
+	global ANIMATION_THREAD
+
+	if ANIMATION_FLAG.is_set():
+		ANIMATION_FLAG.clear()
+
+	if ANIMATION_THREAD:
+		ANIMATION_THREAD.join(timeout=1)
+
+	ANIMATION_THREAD = Thread(target=_ctrlCExplained, daemon=True)
+	ANIMATION_THREAD.start()
+	time.sleep(1)
+
+
 def stopAnimation():
 	ANIMATION_FLAG.clear()
 
@@ -243,6 +263,13 @@ def _animation():
 	while ANIMATION_FLAG.is_set():
 		click.secho(animation[idx % len(animation)] + '\r', nl=False, fg='yellow')
 		idx += 1
+		time.sleep(0.1)
+
+
+def _ctrlCExplained():
+	ANIMATION_FLAG.set()
+	while ANIMATION_FLAG.is_set():
+		click.secho(f'\rPress CTRL-C to quit\r', nl=False, fg='yellow')
 		time.sleep(0.1)
 
 

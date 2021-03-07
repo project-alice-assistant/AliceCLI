@@ -84,6 +84,23 @@ def getDeviceName(ctx: click.Context) -> str:
 def installAlice(ctx: click.Context, force: bool):
 	click.secho('\nInstalling Alice, yayyyy!', color='yellow')
 
+	result = sshCmdWithReturn('test -d ~/ProjectAlice/ && echo "1"')[0].readline()
+	if result:
+		if not force:
+			commons.printError('Alice seems to already exist on that host')
+			answer = prompt(questions={
+				'type': 'confirm',
+				'message': 'Erase and reinstall',
+				'name': 'confirm',
+				'default': False
+			})
+			if not answer['confirm']:
+				commons.returnToMainMenu(ctx)
+				return
+
+		sshCmd('sudo systemctl stop ProjectAlice')
+		sshCmd('sudo rm -rf ~/ProjectAlice')
+
 	questions = [
 		{
 			'type': 'password',
@@ -159,46 +176,35 @@ def installAlice(ctx: click.Context, force: bool):
 	confs['mqttPort'] = int(answers['mqttPort'])
 	confs['activeLanguage'] = answers['activeLanguage']
 	confs['activeCountryCode'] = answers['activeCountryCode']
+	confs['useHLC'] = 'no'
 
 	with confFile.open(mode='w') as f:
 		yaml.dump(confs, f)
 
 	commons.printSuccess('Generated ProjectAlice.yaml')
 
+	commons.printInfo('Updating system')
 	sshCmd('sudo apt-get update')
 	sshCmd('sudo apt-get install git -y')
-	sshCmd('git config --global user.name "An Other"')
+	sshCmd('git config --global user.name "Han Oter"')
 	sshCmd('git config --global user.email "anotheruser@projectalice.io"')
 
-	result = sshCmdWithReturn('test -d ~/ProjectAlice/ && echo "1"')[0].readline()
-	if result:
-		if not force:
-			commons.printError('Alice seems to already exist on that host')
-			answer = prompt(questions={
-				'type': 'confirm',
-				'message': 'Erase and reinstall',
-				'name': 'confirm',
-				'default': False
-			})
-			if not answer['confirm']:
-				commons.returnToMainMenu(ctx)
-				return
-
-		commons.waitAnimation()
-		sshCmd('sudo systemctl stop ProjectAlice')
-		sshCmd('sudo rm -rf ~/ProjectAlice')
-
+	commons.printInfo('Cloning Alice')
 	sshCmd('git clone https://github.com/project-alice-assistant/ProjectAlice.git ~/ProjectAlice')
-	sshCmd('git -C ~/ProjectAlice submodule init')
-	sshCmd('git -C ~/ProjectAlice submodule update')
-	sshCmd('git -C ~/ProjectAlice submodule foreach git checkout builds_master')
-	sshCmd('git -C ~/ProjectAlice submodule foreach git pull')
 	sshCmd(f'echo "{confFile.read_text()}" > ~/ProjectAlice/ProjectAlice.yaml')
 	sshCmd('sudo cp ~/ProjectAlice/ProjectAlice.yaml /boot/ProjectAlice.yaml')
-	sshCmd('python3 ~/ProjectAlice/main.py')
 
-	commons.printSuccess('Alice is installing!')
-	commons.returnToMainMenu(ctx)
+	commons.printInfo('Start install process')
+	sshCmd('cd ~/ProjectAlice/ && python3 main.py')
+
+	commons.printSuccess('Alice has completed the basic installation! She\'s now working further to complete the installation, let\'s see what she does!')
+	commons.ctrlCExplained()
+
+	try:
+		sshCmd('tail -f /var/log/syslog & { read ; kill %1; }')
+	except KeyboardInterrupt:
+		commons.SSH.exec_command('\r')
+		commons.returnToMainMenu(ctx)
 
 
 @click.command(name='prepareSdCard')
@@ -214,6 +220,11 @@ def prepareSdCard(ctx: click.Context):
 				drives.append(dp.device)
 		except:
 			continue # If we can't read the partition, we can't write it either
+
+	if not drives:
+		commons.printError('Please insert your SD card first')
+		commons.returnToMainMenu(ctx)
+		return
 
 	questions = [
 		{

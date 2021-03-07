@@ -24,9 +24,11 @@ def mainMenu(ctx: click.Context):
 					'Connect to a device',
 					Separator(),
 					'Prepare your SD card',
-					'Install Alice',
+					'Change device\'s password',
+					'Set device\'s name',
 					'Install your sound device',
-					'Uninstall your sound device',
+					'Sound test',
+					'Install Alice',
 					Separator(),
 					'Start Alice',
 					'Restart Alice',
@@ -34,13 +36,11 @@ def mainMenu(ctx: click.Context):
 					'Enable Alice service',
 					'Disable Alice service',
 					Separator(),
-					'Sound test',
-					'Change device\'s password',
-					'Set device\'s name',
 					'Update Alice',
 					'Update system',
 					'Upgrade system',
 					'Reboot device',
+					'Uninstall your sound device',
 					'Exit'
 				]
 			}
