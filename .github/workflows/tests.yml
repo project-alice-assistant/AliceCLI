@@ -22,7 +22,7 @@ jobs:
         with:
           path: requirements_test.txt
       - name: Tests
-        run: pytest AliceCli/tests/ --cov=core/ --cov-report=xml
+        run: pytest AliceCli/tests/ --cov=AliceCli/ --cov-report=xml
       - name: Fix paths
         run: sed -i 's/\/home\/runner\/work\/AliceCLI\/AliceCLI\//\/github\/workspace\//g' coverage.xml
       - name: Sonarcloud scan
