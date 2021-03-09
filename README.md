@@ -17,6 +17,8 @@ Install this tool via pip, on your main computer:
 
 `pip3 install projectalice-cli`
 
+Note that you need Python 3.8 at least
+
 
 # Devs of this tool
 - Clone this repository
