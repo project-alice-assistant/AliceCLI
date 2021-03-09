@@ -1,6 +1,5 @@
 from unittest import TestCase
 
-
 class Test_Install(TestCase):
 
 	def test_install_sound_device(self):

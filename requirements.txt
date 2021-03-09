@@ -1,0 +1,7 @@
+Click
+paramiko
+PyInquirer
+networkscan
+pyyaml
+requests
+psutil
