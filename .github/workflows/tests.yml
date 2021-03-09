@@ -20,7 +20,7 @@ jobs:
       - name: Install dependencies
         uses: py-actions/py-dependency-install@v2
         with:
-          path: requirements.txt
+          path: requirements_test.txt
       - name: Tests
         run: pytest tests/ --cov=core/ --cov-report=xml
       - name: Fix paths

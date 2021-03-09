@@ -6,4 +6,6 @@ pyyaml
 requests
 psutil
 pytest
-
+coverage
+pytest-cov
+coveralls
