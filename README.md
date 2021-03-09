@@ -1,4 +1,7 @@
 [![Upload Python Package](https://github.com/project-alice-assistant/AliceCLI/actions/workflows/python-publish.yml/badge.svg)](https://github.com/project-alice-assistant/AliceCLI/actions/workflows/python-publish.yml)
+ [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=project-alice-assistant_AliceCLI&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=project-alice-assistant_AliceCLI)
+ [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=project-alice-assistant_AliceCLI&metric=alert_status)](https://sonarcloud.io/dashboard?id=project-alice-assistant_AliceCLI)
+ [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=project-alice-assistant_AliceCLI&metric=coverage)](https://sonarcloud.io/dashboard?id=project-alice-assistant_AliceCLI) 
 
 # Project Alice CLI
 
