@@ -5,3 +5,5 @@ networkscan
 pyyaml
 requests
 psutil
+pytest
+
