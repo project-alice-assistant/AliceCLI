@@ -1,3 +1,23 @@
+#  Copyright (c) 2021
+#
+#  This file, install.py, is part of Project Alice CLI.
+#
+#  Project Alice CLI is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>
+#
+#  Last modified: 2021.04.13 at 14:46:45 CEST
+#  Last modified by: Psycho
+import subprocess
 from pathlib import Path
 from typing import Tuple
 
@@ -6,6 +26,8 @@ import psutil as psutil
 import yaml
 from PyInquirer import prompt
 import requests
+from bs4 import BeautifulSoup
+from tqdm import tqdm
 
 from AliceCli.utils import commons
 from AliceCli.utils.decorators import checkConnection
@@ -176,7 +198,7 @@ def installAlice(ctx: click.Context, force: bool):
 	confs['mqttPort'] = int(answers['mqttPort'])
 	confs['activeLanguage'] = answers['activeLanguage']
 	confs['activeCountryCode'] = answers['activeCountryCode']
-	confs['useHLC'] = 'no'
+	confs['useHLC'] = False
 
 	with confFile.open(mode='w') as f:
 		yaml.dump(confs, f)
@@ -211,15 +233,73 @@ def installAlice(ctx: click.Context, force: bool):
 @click.pass_context
 def prepareSdCard(ctx: click.Context):
 
+	questions = [
+		{
+			'type': 'confirm',
+			'message': 'Do you want to flash your SD card with Raspberry PI OS?',
+			'name': 'doFlash',
+			'default': False
+		}
+	]
+
+	process = subprocess.Popen('npm list -g etcher-cli'.split(), stdout=subprocess.PIPE, creationflags=subprocess.CREATE_NEW_CONSOLE, shell=True)
+	result = process.stdout.read().decode()
+	if '(empty)' in result:
+		questions.append(
+			{
+				'type': 'confirm',
+				'message': 'Etcher-cli was not found on your system, do you want to install it?',
+				'name': 'installEtcher',
+				'default': True,
+				'when': lambda answers: answers['doFlash']
+			}
+		)
+
+	answers = prompt(questions)
+
+	if answers['doFlash'] and '(empty)' in result and ('installEtcher' not in answers or not answers['installEtcher']):
+		commons.printError('Well then, I cannot flash your SD card without the appropriate tool to do it')
+		commons.returnToMainMenu(ctx)
+		return
+	elif answers['doFlash'] and '(empty)' in result and ('installEtcher' in answers and answers['installEtcher']):
+		commons.printInfo('Installing Etcher-cli, please wait...')
+		process = subprocess.Popen('npm install -g etcher-cli'.split(), creationflags=subprocess.CREATE_NEW_CONSOLE, shell=True)
+		if process.returncode:
+			commons.printError('Failed install Etcher-cli, cannot continue...')
+			commons.returnToMainMenu(ctx)
+			return
+
+	images = list()
+	downloadsPath = Path()
+	if answers['doFlash']:
+		directories = list()
+		commons.printInfo('Checking for Raspberry PI OS images, please wait....')
+		# Get a list of available images
+		url = 'https://downloads.raspberrypi.org/raspios_lite_armhf/images/'
+		page = requests.get(url)
+		if page.status_code == 200:
+			soup = BeautifulSoup(page.text, features='html.parser')
+			directories = [url + node.get('href') for node in soup.find_all('a') if node.get('href').endswith('/')]
+			if directories:
+				directories.pop(0) # This is the return link, remove it...
+
+		for directory in directories:
+			page = requests.get(directory)
+			if page.status_code == 200:
+				soup = BeautifulSoup(page.text, features='html.parser')
+				images.extend([directory + node.get('href') for node in soup.find_all('a') if node.get('href').endswith('.zip')])
+
+		# Potential local files
+		downloadsPath = Path.home() / 'Downloads'
+		for file in downloadsPath.glob('*raspi*.zip'):
+			images.append(str(file))
+
+
 	drives = list()
 	for dp in psutil.disk_partitions():
 		if 'removable' not in dp.opts.lower():
 			continue
-		try:
-			if psutil.disk_usage(dp.device).total / 1024 / 1024 < 300: # boot partitions are usually tiny
-				drives.append(dp.device)
-		except:
-			continue # If we can't read the partition, we can't write it either
+		drives.append(dp.device)
 
 	if not drives:
 		commons.printError('Please insert your SD card first')
@@ -229,8 +309,15 @@ def prepareSdCard(ctx: click.Context):
 	questions = [
 		{
 			'type'   : 'list',
+			'name'   : 'image',
+			'message': 'Select the image you want to flash',
+			'choices': images,
+			'when': lambda answers: answers['doFlash']
+		},
+		{
+			'type'   : 'list',
 			'name'   : 'drive',
-			'message': 'Select your SD card drive (boot partition)',
+			'message': 'Select your SD card drive',
 			'choices': drives
 		},
 		{
@@ -252,10 +339,27 @@ def prepareSdCard(ctx: click.Context):
 		}
 	]
 
-	answers = prompt(questions=questions)
+	answers = prompt(questions=questions, answers=answers)
 
 	if not answers:
 		commons.returnToMainMenu(ctx)
+
+	if answers['doFlash'] and answers['image'].startswith('https'):
+		file = downloadsPath / answers['image'].split('/')[-1]
+		with file.open(mode='wb') as f:
+			response = requests.get(answers['image'], stream=True)
+			size = int(response.headers.get('content-length'))
+
+			with tqdm(total=size, unit='B', unit_scale=True, unit_divisor=1024, desc=answers['image'], initial=0, ascii=True, miniters=1) as progress:
+				for data in response.iter_content(chunk_size=4096):
+					f.write(data)
+					progress.update(len(data))
+
+
+
+
+
+	return
 
 	Path(answers['drive'], 'ssh').touch()
 
