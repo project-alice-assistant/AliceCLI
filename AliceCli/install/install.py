@@ -17,8 +17,10 @@
 #
 #  Last modified: 2021.04.13 at 14:46:45 CEST
 #  Last modified by: Psycho
+import platform
 import subprocess
 from pathlib import Path
+from shutil import which
 from typing import Tuple
 
 import click
@@ -233,44 +235,56 @@ def installAlice(ctx: click.Context, force: bool):
 @click.pass_context
 def prepareSdCard(ctx: click.Context):
 
+	flasherAvailable = which('balena') is not None
+	downloadsPath = Path.home() / 'Downloads'
+	operatingSystem = platform.system().lower()
+
 	questions = [
 		{
 			'type': 'confirm',
 			'message': 'Do you want to flash your SD card with Raspberry PI OS?',
 			'name': 'doFlash',
 			'default': False
+		},
+		{
+			'type': 'confirm',
+			'message': 'Balena-cli was not found on your system, do you want to install it?',
+			'name': 'installBalena',
+			'default': True,
+			'when': lambda flasherAvailable: not flasherAvailable
 		}
 	]
 
-	process = subprocess.Popen('npm list -g etcher-cli'.split(), stdout=subprocess.PIPE, creationflags=subprocess.CREATE_NEW_CONSOLE, shell=True)
-	result = process.stdout.read().decode()
-	if '(empty)' in result:
-		questions.append(
-			{
-				'type': 'confirm',
-				'message': 'Etcher-cli was not found on your system, do you want to install it?',
-				'name': 'installEtcher',
-				'default': True,
-				'when': lambda answers: answers['doFlash']
-			}
-		)
-
 	answers = prompt(questions)
+	answers.setdefault('installBalena', False)
 
-	if answers['doFlash'] and '(empty)' in result and ('installEtcher' not in answers or not answers['installEtcher']):
+	if answers['doFlash'] and not flasherAvailable and not answers['installBalena']:
 		commons.printError('Well then, I cannot flash your SD card without the appropriate tool to do it')
 		commons.returnToMainMenu(ctx)
 		return
-	elif answers['doFlash'] and '(empty)' in result and ('installEtcher' in answers and answers['installEtcher']):
-		commons.printInfo('Installing Etcher-cli, please wait...')
-		process = subprocess.Popen('npm install -g etcher-cli'.split(), creationflags=subprocess.CREATE_NEW_CONSOLE, shell=True)
-		if process.returncode:
-			commons.printError('Failed install Etcher-cli, cannot continue...')
-			commons.returnToMainMenu(ctx)
-			return
+	elif answers['doFlash'] and not flasherAvailable and answers['installBalena']:
+		commons.printInfo('Installing Balena-cli, please wait...')
+
+		if operatingSystem == 'windows':
+			url = 'https://github.com/balena-io/balena-cli/releases/download/v12.44.9/balena-cli-v12.44.9-windows-x64-installer.exe'
+		elif operatingSystem == 'linux':
+			url = 'https://github.com/balena-io/balena-cli/releases/download/v12.44.9/balena-cli-v12.44.9-linux-x64-standalone.zip'
+		else:
+			url = 'https://github.com/balena-io/balena-cli/releases/download/v12.44.9/balena-cli-v12.44.9-macOS-x64-installer.pkg'
+
+		destination = downloadsPath / url.split('/')[-1]
+		doDownload(url=url, destination=destination)
+
+		if operatingSystem == 'windows':
+			commons.printInfo("Downloaded! I'm starting the installation, please follow the instructions and come back when it's done!")
+			subprocess.Popen(str(destination).split(), shell=True)
+			click.pause('Press a key when the installation process is done! Please close your terminal and restart it to continue the flashing process')
+			exit(0)
+		else:
+			click.pause('I have no idea how to install stuff on Mac, so I have downloaded the tool for you, please install it. Oh, and contact Psycho to let him know how to install a pkg file on Mac ;-)')
+			exit(0)
 
 	images = list()
-	downloadsPath = Path()
 	if answers['doFlash']:
 		directories = list()
 		commons.printInfo('Checking for Raspberry PI OS images, please wait....')
@@ -344,22 +358,15 @@ def prepareSdCard(ctx: click.Context):
 	if not answers:
 		commons.returnToMainMenu(ctx)
 
-	if answers['doFlash'] and answers['image'].startswith('https'):
-		file = downloadsPath / answers['image'].split('/')[-1]
-		with file.open(mode='wb') as f:
-			response = requests.get(answers['image'], stream=True)
-			size = int(response.headers.get('content-length'))
+	if answers['doFlash']:
+		if answers['image'].startswith('https'):
+			file = downloadsPath / answers['image'].split('/')[-1]
+			doDownload(url=answers['image'], destination=file)
+		else:
+			file = answers['image']
 
-			with tqdm(total=size, unit='B', unit_scale=True, unit_divisor=1024, desc=answers['image'], initial=0, ascii=True, miniters=1) as progress:
-				for data in response.iter_content(chunk_size=4096):
-					f.write(data)
-					progress.update(len(data))
-
-
-
-
-
-	return
+		if operatingSystem == 'windows':
+			subprocess.run(f'balena local flash {str(file)}'.split(), shell=True)
 
 	Path(answers['drive'], 'ssh').touch()
 
@@ -387,3 +394,14 @@ def sshCmd(cmd: str):
 def sshCmdWithReturn(cmd: str) -> Tuple:
 	stdin, stdout, stderr = commons.SSH.exec_command(cmd)
 	return stdout, stderr
+
+
+def doDownload(url: str, destination: Path):
+	with destination.open(mode='wb') as f:
+		response = requests.get(url, stream=True)
+		size = int(response.headers.get('content-length'))
+
+		with tqdm(total=size, unit='B', unit_scale=True, unit_divisor=1024, desc=url.split('/')[-1], initial=0, ascii=True, miniters=1) as progress:
+			for data in response.iter_content(chunk_size=4096):
+				f.write(data)
+				progress.update(len(data))
