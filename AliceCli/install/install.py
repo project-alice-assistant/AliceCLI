@@ -1,5 +1,43 @@
 #  Copyright (c) 2021
 #
+#  This file, install.py, is part of Project Alice.
+#
+#  Project Alice is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>
+#
+#  Last modified: 2021.07.31 at 15:54:28 CEST
+
+#  Copyright (c) 2021
+#
+#  This file, install.py, is part of Project Alice.
+#
+#  Project Alice is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>
+#
+#  Last modified: 2021.07.31 at 15:54:27 CEST
+
+#  Copyright (c) 2021
+#
 #  This file, install.py, is part of Project Alice CLI.
 #
 #  Project Alice CLI is free software: you can redistribute it and/or modify
@@ -25,15 +63,14 @@ from typing import Tuple
 
 import click
 import psutil as psutil
-import yaml
-from PyInquirer import prompt
 import requests
-from bs4 import BeautifulSoup
-from tqdm import tqdm
-
+import yaml
 from AliceCli.utils import commons
 from AliceCli.utils.decorators import checkConnection
 from AliceCli.utils.utils import reboot
+from PyInquirer import prompt
+from bs4 import BeautifulSoup
+from tqdm import tqdm
 
 
 @click.command(name="installSoundDevice")
@@ -311,6 +348,7 @@ def prepareSdCard(ctx: click.Context):
 
 	drives = list()
 	for dp in psutil.disk_partitions():
+		print(dp)
 		if 'removable' not in dp.opts.lower():
 			continue
 		drives.append(dp.device)
@@ -366,7 +404,11 @@ def prepareSdCard(ctx: click.Context):
 			file = answers['image']
 
 		if operatingSystem == 'windows':
-			subprocess.run(f'balena local flash {str(file)}'.split(), shell=True)
+			subprocess.run(f'balena local flash {str(file)} --yes'.split(), shell=True)
+		else:
+			click.pause('Flashing only support on Windows system for now. If you have the knowledge to implement it on other systems, feel free to pull request!')
+			commons.returnToMainMenu(ctx)
+			return
 
 	Path(answers['drive'], 'ssh').touch()
 
