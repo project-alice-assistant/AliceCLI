@@ -18,21 +18,20 @@
 #  Last modified: 2021.03.07 at 13:31:43 CET
 #  Last modified by: Psycho
 
+import click
 import json
+import paramiko
 import re
 import socket
 import sys
 import time
 import uuid
-from pathlib import Path
-from typing import Optional
-
-import click
-from threading import Event, Thread
-
-import paramiko
 from PyInquirer import prompt
 from networkscan import networkscan
+from pathlib import Path
+from threading import Event, Thread
+from typing import Optional
+
 
 IP_REGEX = re.compile(r'^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')
 SSH: Optional[paramiko.SSHClient] = None
@@ -311,9 +310,12 @@ def askReturnToMainMenu(ctx: click.Context):
 		returnToMainMenu(ctx)
 
 
-def returnToMainMenu(ctx: click.Context):
+def returnToMainMenu(ctx: click.Context, pause: bool = False, message: str = ''):
 	import AliceCli.MainMenu as MainMenu
+
 	stopAnimation()
+	if pause:
+		click.pause(message)
 	ctx.invoke(MainMenu.mainMenu)
 
 

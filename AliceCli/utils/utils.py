@@ -18,8 +18,8 @@
 #  Last modified: 2021.03.04 at 17:03:56 CET
 #  Last modified by: Psycho
 
-import time
 import click
+import time
 from PyInquirer import prompt
 
 from AliceCli.utils import commons
@@ -68,7 +68,7 @@ def changePassword(ctx: click.Context, current_password: str = None, password: s
 			return
 
 		current_password = answers['cpassword']
-		password = answers['password']
+		password = answers['npassword']
 
 	commons.waitAnimation()
 	stdin, stdout, stderr = commons.SSH.exec_command(f'echo -e "{current_password}\n{password}\n{password}" | passwd')
@@ -133,14 +133,14 @@ def reboot(ctx: click.Context, return_to_main_menu: bool = True): #NOSONAR
 	commons.SSH.exec_command('sudo reboot')
 	address = commons.CONNECTED_TO
 	time.sleep(5)
-	while i := 0 < 3: #NOSONAR
+	while i := 0 < 4:  # NOSONAR
 		ctx.invoke(commons.connect, ip_address=address, return_to_main_menu=False)
 		if commons.SSH:
 			commons.printSuccess('Device rebooted!')
 			if return_to_main_menu:
 				commons.returnToMainMenu(ctx)
 			return
-		i += 1 #NOSONAR
+		i += 1  # NOSONAR
 
 	commons.printError('Failed rebooting device')
 

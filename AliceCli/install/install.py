@@ -17,60 +17,22 @@
 #
 #  Last modified: 2021.07.31 at 15:54:28 CEST
 
-#  Copyright (c) 2021
-#
-#  This file, install.py, is part of Project Alice.
-#
-#  Project Alice is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>
-#
-#  Last modified: 2021.07.31 at 15:54:27 CEST
-
-#  Copyright (c) 2021
-#
-#  This file, install.py, is part of Project Alice CLI.
-#
-#  Project Alice CLI is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>
-#
-#  Last modified: 2021.04.13 at 14:46:45 CEST
-#  Last modified by: Psycho
+import click
 import platform
+import psutil
+import requests
 import subprocess
+import yaml
+from PyInquirer import prompt
+from bs4 import BeautifulSoup
 from pathlib import Path
 from shutil import which
+from tqdm import tqdm
 from typing import Tuple
 
-import click
-import psutil as psutil
-import requests
-import yaml
 from AliceCli.utils import commons
 from AliceCli.utils.decorators import checkConnection
 from AliceCli.utils.utils import reboot
-from PyInquirer import prompt
-from bs4 import BeautifulSoup
-from tqdm import tqdm
 
 
 @click.command(name="installSoundDevice")
@@ -87,6 +49,7 @@ def installSoundDevice(ctx: click.Context, device: str):
 
 	ctx.invoke(uninstallSoundDevice, device=device, return_to_main_menu=False)
 	commons.waitAnimation()
+	sshCmd('sudo apt-get install git -y')
 	if device.lower() in {'respeaker2', 'respeaker4', 'respeaker4miclineararray', 'respeaker6micarray'}:
 		sshCmd('git clone https://github.com/HinTak/seeed-voicecard.git ~/seeed-voicecard/')
 		sshCmd('git -C ~/seeed-voicecard/ checkout v5.9 && git -C ~/seeed-voicecard/ pull')
@@ -135,7 +98,6 @@ def getDeviceName(ctx: click.Context) -> str:
 		return ''
 
 	return answer['device']
-
 
 
 @click.command(name='installAlice')
@@ -202,11 +164,23 @@ def installAlice(ctx: click.Context, force: bool):
 			'message' : 'What country code should Alice be using?',
 			'default' : 'US',
 			'validate': lambda string: len(string) > 0
+		},
+		{
+			'type'   : 'list',
+			'name'   : 'releaseType',
+			'message': 'What releases do you want to receive? If you are unsure, LEAVE THIS TO MASTER',
+			'default': 'master',
+			'choices': [
+				'master',
+				'rc',
+				'beta',
+				'alpha'
+			]
 		}
 	]
 
 	answers = prompt(questions)
-	if len(answers) < 5:
+	if len(answers) < 6:
 		commons.returnToMainMenu(ctx)
 		return
 
@@ -238,6 +212,7 @@ def installAlice(ctx: click.Context, force: bool):
 	confs['activeLanguage'] = answers['activeLanguage']
 	confs['activeCountryCode'] = answers['activeCountryCode']
 	confs['useHLC'] = False
+	confs['installSound'] = False
 
 	with confFile.open(mode='w') as f:
 		yaml.dump(confs, f)
@@ -284,20 +259,23 @@ def prepareSdCard(ctx: click.Context):
 			'default': False
 		},
 		{
-			'type': 'confirm',
+			'type'   : 'confirm',
 			'message': 'Balena-cli was not found on your system, do you want to install it?',
-			'name': 'installBalena',
+			'name'   : 'installBalena',
 			'default': True,
-			'when': lambda flasherAvailable: not flasherAvailable
+			'when'   : lambda flasherAvailable: not flasherAvailable
 		}
 	]
 
 	answers = prompt(questions)
 	answers.setdefault('installBalena', False)
 
-	if answers['doFlash'] and not flasherAvailable and not answers['installBalena']:
-		commons.printError('Well then, I cannot flash your SD card without the appropriate tool to do it')
+	if not answers or 'doFlash' not in answers:
 		commons.returnToMainMenu(ctx)
+		return
+
+	if answers['doFlash'] and not flasherAvailable and not answers['installBalena']:
+		commons.returnToMainMenu(ctx, pause=True, message='Well then, I cannot flash your SD card without the appropriate tool to do it')
 		return
 	elif answers['doFlash'] and not flasherAvailable and answers['installBalena']:
 		commons.printInfo('Installing Balena-cli, please wait...')
@@ -325,14 +303,19 @@ def prepareSdCard(ctx: click.Context):
 	if answers['doFlash']:
 		directories = list()
 		commons.printInfo('Checking for Raspberry PI OS images, please wait....')
-		# Get a list of available images
+		# Potential local files
+		downloadsPath = Path.home() / 'Downloads'
+		for file in downloadsPath.glob('*raspi*.zip'):
+			images.append(str(file))
+
+		# Get a list of available images online
 		url = 'https://downloads.raspberrypi.org/raspios_lite_armhf/images/'
 		page = requests.get(url)
 		if page.status_code == 200:
 			soup = BeautifulSoup(page.text, features='html.parser')
 			directories = [url + node.get('href') for node in soup.find_all('a') if node.get('href').endswith('/')]
 			if directories:
-				directories.pop(0) # This is the return link, remove it...
+				directories.pop(0)  # This is the return link, remove it...
 
 		for directory in directories:
 			page = requests.get(directory)
@@ -340,22 +323,15 @@ def prepareSdCard(ctx: click.Context):
 				soup = BeautifulSoup(page.text, features='html.parser')
 				images.extend([directory + node.get('href') for node in soup.find_all('a') if node.get('href').endswith('.zip')])
 
-		# Potential local files
-		downloadsPath = Path.home() / 'Downloads'
-		for file in downloadsPath.glob('*raspi*.zip'):
-			images.append(str(file))
-
-
-	drives = list()
-	for dp in psutil.disk_partitions():
-		print(dp)
-		if 'removable' not in dp.opts.lower():
+	drives = dict()
+	output = subprocess.run(f'balena util available-drives'.split(), capture_output=True, shell=True).stdout.decode()
+	for line in output.split('\n'):
+		if not line.startswith('\\'):
 			continue
-		drives.append(dp.device)
+		drives[line] = line.split(' ')[0]
 
 	if not drives:
-		commons.printError('Please insert your SD card first')
-		commons.returnToMainMenu(ctx)
+		commons.returnToMainMenu(ctx, pause=True, message='Please insert your SD card first')
 		return
 
 	questions = [
@@ -373,21 +349,21 @@ def prepareSdCard(ctx: click.Context):
 			'choices': drives
 		},
 		{
-			'type'   : 'input',
-			'name'   : 'ssid',
-			'message': 'Please enter the name of your Wifi network',
+			'type'    : 'input',
+			'name'    : 'ssid',
+			'message' : 'Enter the name of your Wifi network',
 			'validate': lambda c: len(c) > 0
-		},
-		{
-			'type'   : 'input',
-			'name'   : 'country',
-			'message': 'Please enter your country code (example: CH, US, DE, FR etc)',
-			'validate': lambda c: len(c) == 2
 		},
 		{
 			'type'   : 'password',
 			'name'   : 'password',
-			'message': 'Please enter your Wifi network\'s key'
+			'message': 'Enter your Wifi network\'s key'
+		},
+		{
+			'type'    : 'input',
+			'name'    : 'country',
+			'message' : 'Enter your country code (example: CH, US, DE, FR etc)',
+			'validate': lambda c: len(c) == 2
 		}
 	]
 
@@ -395,7 +371,12 @@ def prepareSdCard(ctx: click.Context):
 
 	if not answers:
 		commons.returnToMainMenu(ctx)
+		return
 
+	# We need the value, not the full definition of the drive...
+	answers['drive'] = drives[answers['drive']]
+
+	commons.printInfo("Ok, let's do this!")
 	if answers['doFlash']:
 		if answers['image'].startswith('https'):
 			file = downloadsPath / answers['image'].split('/')[-1]
@@ -403,12 +384,38 @@ def prepareSdCard(ctx: click.Context):
 		else:
 			file = answers['image']
 
-		if operatingSystem == 'windows':
-			subprocess.run(f'balena local flash {str(file)} --yes'.split(), shell=True)
+		if operatingSystem == 'windows' or operatingSystem == 'linux':
+			subprocess.run(f'balena local flash {str(file)} --drive {answers["drive"]} --yes'.split(), shell=True)
 		else:
-			click.pause('Flashing only support on Windows system for now. If you have the knowledge to implement it on other systems, feel free to pull request!')
-			commons.returnToMainMenu(ctx)
+			commons.returnToMainMenu(ctx, pause=True, message='Flashing only supported on Windows and Linux systems for now. If you have the knowledge to implement it on other systems, feel free to pull request!')
 			return
+
+	drive = ''
+	drives = list()
+	i = 0
+	for dp in psutil.disk_partitions():
+		i += 1
+		if 'removable' not in dp.opts.lower():
+			continue
+		drives.append(dp.device)
+		if i == int(answers['drive'][-1]):
+			drive = dp.device
+
+	if not drive:
+		commons.printError('Something went wrong flashing/writing on your SD card, sorry, I cannot find the SD card device anymore...')
+		questions = [
+			{
+				'type'   : 'list',
+				'name'   : 'drive',
+				'message': 'Which drive is the SD boot device?',
+				'choices': drives
+			}
+		]
+		answers = prompt(questions=questions, answers=answers)
+		if not answers:
+			commons.returnToMainMenu(ctx, pause=True, message="I'm really sorry, but I just can't continue without this info, sorry for wasting your time...")
+	else:
+		answers['drive'] = drive
 
 	Path(answers['drive'], 'ssh').touch()
 
@@ -423,8 +430,7 @@ def prepareSdCard(ctx: click.Context):
 	content += '}'
 	Path(answers['drive'], 'wpa_supplicant.conf').write_text(content)
 
-	commons.printSuccess('SD card ready, please plug it in your device and boot it!')
-	commons.returnToMainMenu(ctx)
+	commons.returnToMainMenu(ctx, pause=True, message='SD card ready, please plug it in your device and boot it!')
 
 
 def sshCmd(cmd: str):
