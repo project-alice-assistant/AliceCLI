@@ -213,6 +213,8 @@ def installAlice(ctx: click.Context, force: bool):
 	confs['activeCountryCode'] = answers['activeCountryCode']
 	confs['useHLC'] = False
 	confs['installSound'] = False
+	confs['aliceUpdateChannel'] = answers['releaseType']
+	confs['skillUpdateChannel'] = answers['releaseType']
 
 	with confFile.open(mode='w') as f:
 		yaml.dump(confs, f)
