@@ -29,10 +29,10 @@ from pathlib import Path
 from shutil import which
 from tqdm import tqdm
 
-from AliceCli.utils import commons, utils
+from AliceCli.utils import commons
 from AliceCli.utils.commons import sshCmd, sshCmdWithReturn
 from AliceCli.utils.decorators import checkConnection
-from AliceCli.utils.utils import reboot
+from AliceCli.utils.utils import reboot, systemLogs
 
 
 @click.command(name="installSoundDevice")
@@ -277,7 +277,7 @@ def installAlice(ctx: click.Context, force: bool):
 	sshCmd('cd ~/ProjectAlice/ && python3 main.py')
 
 	commons.printSuccess('Alice has completed the basic installation! She\'s now working further to complete the installation, let\'s see what she does!')
-	utils.systemLogs(ctx)
+	ctx.invoke(systemLogs)
 
 
 @click.command(name='prepareSdCard')
