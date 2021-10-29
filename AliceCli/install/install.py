@@ -29,7 +29,7 @@ from pathlib import Path
 from shutil import which
 from tqdm import tqdm
 
-from AliceCli.utils import commons
+from AliceCli.utils import commons, utils
 from AliceCli.utils.commons import sshCmd, sshCmdWithReturn
 from AliceCli.utils.decorators import checkConnection
 from AliceCli.utils.utils import reboot
@@ -252,7 +252,8 @@ def installAlice(ctx: click.Context, force: bool):
 
 	if answers['soundInstalled']:
 		confs['installSound'] = False
-		confs['audioHardware'][answers['audioDevice']] = True
+		if answers['audioDevice'] != 'none of the above':
+			confs['audioHardware'][answers['audioDevice']] = True
 	else:
 		confs['installSound'] = True
 
@@ -276,13 +277,7 @@ def installAlice(ctx: click.Context, force: bool):
 	sshCmd('cd ~/ProjectAlice/ && python3 main.py')
 
 	commons.printSuccess('Alice has completed the basic installation! She\'s now working further to complete the installation, let\'s see what she does!')
-	commons.ctrlCExplained()
-
-	try:
-		sshCmd('tail -f /var/log/syslog & { read ; kill %1; }')
-	except KeyboardInterrupt:
-		commons.SSH.exec_command('\r')
-		commons.returnToMainMenu(ctx)
+	utils.systemLogs(ctx)
 
 
 @click.command(name='prepareSdCard')

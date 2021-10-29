@@ -188,7 +188,7 @@ def upgradeSystem(ctx: click.Context):
 	ctx.invoke(reboot)
 
 
-@click.command(name='soundtest')
+@click.command(name='soundTest')
 @click.pass_context
 @checkConnection
 def soundTest(ctx: click.Context):
@@ -202,14 +202,15 @@ def soundTest(ctx: click.Context):
 	commons.returnToMainMenu(ctx, pause=True)
 
 
-@click.command(name='systemlogs')
+@click.command(name='systemLogs')
 @click.pass_context
 @checkConnection
 def systemLogs(ctx: click.Context):
-	commons.ctrlCExplained()
+	commons.showLogs(ctx, '/var/log/syslog')
 
-	try:
-		commons.sshCmd('tail -f /var/log/syslog & { read ; kill %1; }')
-	except KeyboardInterrupt:
-		commons.SSH.exec_command('\r')
-		commons.returnToMainMenu(ctx)
+
+@click.command(name='aliceLogs')
+@click.pass_context
+@checkConnection
+def aliceLogs(ctx: click.Context):
+	commons.showLogs(ctx, '~/ProjectAlice/var/logs/logs.log')

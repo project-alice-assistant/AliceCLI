@@ -343,8 +343,12 @@ def validateHostname(hostname: str) -> str:
 
 def sshCmd(cmd: str):
 	stdin, stdout, stderr = SSH.exec_command(cmd)
+
 	while line := stdout.readline():
-		click.secho(line, nl=False, color='yellow')
+		try:
+			click.secho(line, nl=False, color='yellow')
+		except KeyboardInterrupt:
+			raise
 
 
 def sshCmdWithReturn(cmd: str) -> Tuple:
@@ -378,3 +382,12 @@ def getUpdateSource(definedSource: str) -> str:
 		updateSource = versions[0]
 
 	return str(updateSource)
+
+
+def showLogs(ctx: click.Context, logFile: str):
+	ctrlCExplained()
+	try:
+		sshCmd(f'tail -f {logFile} & {{ read ; kill %1; }}')
+	except KeyboardInterrupt:
+		SSH.exec_command('\r')
+		returnToMainMenu(ctx)
