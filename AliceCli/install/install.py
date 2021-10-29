@@ -28,9 +28,9 @@ from bs4 import BeautifulSoup
 from pathlib import Path
 from shutil import which
 from tqdm import tqdm
-from typing import Tuple
 
 from AliceCli.utils import commons
+from AliceCli.utils.commons import sshCmd, sshCmdWithReturn
 from AliceCli.utils.decorators import checkConnection
 from AliceCli.utils.utils import reboot
 
@@ -176,11 +176,44 @@ def installAlice(ctx: click.Context, force: bool):
 				'beta',
 				'alpha'
 			]
+		},
+		{
+			'type'   : 'list',
+			'name'   : 'audioDevice',
+			'message': 'Select your audio hardware if listed',
+			'default': 'respeaker2',
+			'choices': [
+				'usbMic',
+				'respeaker2',
+				'respeaker4',
+				'respeaker6MicArray',
+				'respeaker7',
+				'respeakerCoreV2',
+				'googleAIY',
+				'googleAIY2',
+				'matrixCreator',
+				'matrixVoice',
+				'ps3eye',
+				'jabra410',
+				'none of the above'
+			]
+		},
+		{
+			'type'   : 'confirm',
+			'message': 'Did you already install your sound hardware using Alice CLI or confirmed it to be working?',
+			'name'   : 'soundInstalled',
+			'default': False
+		},
+		{
+			'type'   : 'confirm',
+			'message': 'Do you want to install HLC? HLC can pilot leds such as the ones on respeakers to provide visual feedback.',
+			'name'   : 'installHLC',
+			'default': False
 		}
 	]
 
 	answers = prompt(questions)
-	if len(answers) < 6:
+	if len(answers) < len(questions):
 		commons.returnToMainMenu(ctx)
 		return
 
@@ -211,10 +244,15 @@ def installAlice(ctx: click.Context, force: bool):
 	confs['mqttPort'] = int(answers['mqttPort'])
 	confs['activeLanguage'] = answers['activeLanguage']
 	confs['activeCountryCode'] = answers['activeCountryCode']
-	confs['useHLC'] = False
-	confs['installSound'] = False
+	confs['useHLC'] = answers['installHLC']
 	confs['aliceUpdateChannel'] = answers['releaseType']
 	confs['skillUpdateChannel'] = answers['releaseType']
+
+	if answers['soundInstalled']:
+		confs['installSound'] = False
+		confs['audioHardware'][answers['audioDevice']] = True
+	else:
+		confs['installSound'] = True
 
 	with confFile.open(mode='w') as f:
 		yaml.dump(confs, f)
@@ -433,17 +471,6 @@ def prepareSdCard(ctx: click.Context):
 	Path(answers['drive'], 'wpa_supplicant.conf').write_text(content)
 
 	commons.returnToMainMenu(ctx, pause=True, message='SD card ready, please plug it in your device and boot it!')
-
-
-def sshCmd(cmd: str):
-	stdin, stdout, stderr = commons.SSH.exec_command(cmd)
-	while line := stdout.readline():
-		click.secho(line, nl=False, color='yellow')
-
-
-def sshCmdWithReturn(cmd: str) -> Tuple:
-	stdin, stdout, stderr = commons.SSH.exec_command(cmd)
-	return stdout, stderr
 
 
 def doDownload(url: str, destination: Path):

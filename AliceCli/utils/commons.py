@@ -30,7 +30,7 @@ from PyInquirer import prompt
 from networkscan import networkscan
 from pathlib import Path
 from threading import Event, Thread
-from typing import Optional
+from typing import Optional, Tuple
 
 
 IP_REGEX = re.compile(r'^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')
@@ -331,3 +331,14 @@ def validateHostname(hostname: str) -> str:
 		return hostname
 	else:
 		raise click.BadParameter('Hostname cannot contain special characters')
+
+
+def sshCmd(cmd: str):
+	stdin, stdout, stderr = SSH.exec_command(cmd)
+	while line := stdout.readline():
+		click.secho(line, nl=False, color='yellow')
+
+
+def sshCmdWithReturn(cmd: str) -> Tuple:
+	stdin, stdout, stderr = SSH.exec_command(cmd)
+	return stdout, stderr

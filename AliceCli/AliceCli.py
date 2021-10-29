@@ -25,6 +25,7 @@ from .alice import alice
 from .install import install
 from .utils import commons, utils
 
+
 @click.group(invoke_without_command=True)
 @click.pass_context
 def cli(ctx: click.Context):
@@ -39,6 +40,7 @@ cli.add_command(utils.reboot)
 cli.add_command(utils.updateSystem)
 cli.add_command(utils.upgradeSystem)
 cli.add_command(utils.soundTest)
+cli.add_command(utils.systemLogs)
 cli.add_command(utils.changeHostname)
 cli.add_command(utils.changePassword)
 cli.add_command(alice.updateAlice)

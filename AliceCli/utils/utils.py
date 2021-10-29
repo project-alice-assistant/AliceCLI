@@ -194,3 +194,16 @@ def soundTest(ctx: click.Context):
 	commons.stopAnimation()
 	click.secho(line)
 	commons.returnToMainMenu(ctx)
+
+
+@click.command(name='systemlogs')
+@click.pass_context
+@checkConnection
+def systemLogs(ctx: click.Context):
+	commons.ctrlCExplained()
+
+	try:
+		commons.sshCmd('tail -f /var/log/syslog & { read ; kill %1; }')
+	except KeyboardInterrupt:
+		commons.SSH.exec_command('\r')
+		commons.returnToMainMenu(ctx)

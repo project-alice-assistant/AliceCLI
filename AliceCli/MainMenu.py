@@ -18,15 +18,14 @@
 #  Last modified: 2021.03.07 at 10:56:35 CET
 #  Last modified by: Psycho
 
-import sys
-
 import click
+import sys
 from PyInquirer import Separator, prompt
 
 from AliceCli.alice.alice import systemctl, updateAlice
 from AliceCli.install.install import installAlice, installSoundDevice, prepareSdCard, uninstallSoundDevice
-from AliceCli.utils.commons import discover, connect
-from AliceCli.utils.utils import changeHostname, changePassword, reboot, soundTest, updateSystem, upgradeSystem
+from AliceCli.utils.commons import connect, discover
+from AliceCli.utils.utils import changeHostname, changePassword, reboot, soundTest, systemLogs, updateSystem, upgradeSystem
 
 
 @click.command(name='main_menu')
@@ -36,7 +35,7 @@ def mainMenu(ctx: click.Context):
 	answers = prompt(
 		questions=[
 			{
-				'type': 'list',
+				'type'   : 'list',
 				'name': 'mainMenu',
 				'message': 'Please select an option',
 				'choices': [
@@ -61,6 +60,7 @@ def mainMenu(ctx: click.Context):
 					'Upgrade system',
 					'Reboot device',
 					'Uninstall your sound device',
+					'Check system logs',
 					'Exit'
 				]
 			}
@@ -108,5 +108,7 @@ def mainMenu(ctx: click.Context):
 		ctx.invoke(changePassword)
 	elif answers['mainMenu'] == 'Set device\'s name':
 		ctx.invoke(changeHostname)
+	elif answers['mainMenu'] == 'Check system logs':
+		ctx.invoke(systemLogs)
 	else:
 		ctx.invoke(mainMenu)
