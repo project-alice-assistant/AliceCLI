@@ -221,8 +221,10 @@ def installAlice(ctx: click.Context, force: bool):
 	confFile = Path(Path.home(), '.pacli/projectalice.yaml')
 	confFile.parent.mkdir(parents=True, exist_ok=True)
 
+	updateSource = commons.getUpdateSource(answers['releaseType'])
+
 	try:
-		with requests.get(url='https://raw.githubusercontent.com/project-alice-assistant/ProjectAlice/master/ProjectAlice.yaml', stream=True) as r:
+		with requests.get(url=f'https://raw.githubusercontent.com/project-alice-assistant/ProjectAlice/{updateSource}/ProjectAlice.yaml', stream=True) as r:
 			r.raise_for_status()
 			with confFile.open('wb') as fp:
 				for chunk in r.iter_content(chunk_size=8192):

@@ -22,6 +22,7 @@ import click
 import json
 import paramiko
 import re
+import requests
 import socket
 import sys
 import time
@@ -31,6 +32,8 @@ from networkscan import networkscan
 from pathlib import Path
 from threading import Event, Thread
 from typing import Optional, Tuple
+
+from AliceCli.Version import Version
 
 
 IP_REGEX = re.compile(r'^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')
@@ -342,3 +345,31 @@ def sshCmd(cmd: str):
 def sshCmdWithReturn(cmd: str) -> Tuple:
 	stdin, stdout, stderr = SSH.exec_command(cmd)
 	return stdout, stderr
+
+
+def getUpdateSource(definedSource: str) -> str:
+	updateSource = 'master'
+	if definedSource in {'master', 'release'}:
+		return updateSource
+
+	# noinspection PyUnboundLocalVariable
+	req = requests.get('https://api.github.com/repos/project-alice-assistant/ProjectAlice/branches')
+	result = req.json()
+
+	versions = list()
+	for branch in result:
+		repoVersion = Version.fromString(branch['name'])
+
+		releaseType = repoVersion.releaseType
+		if not repoVersion.isVersionNumber \
+				or definedSource == 'rc' and releaseType in {'b', 'a'} \
+				or definedSource == 'beta' and releaseType == 'a':
+			continue
+
+		versions.append(repoVersion)
+
+	if versions:
+		versions.sort(reverse=True)
+		updateSource = versions[0]
+
+	return str(updateSource)
