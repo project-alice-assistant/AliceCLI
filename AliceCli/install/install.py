@@ -57,7 +57,7 @@ def installSoundDevice(ctx: click.Context, device: str):
 		ctx.invoke(reboot, return_to_main_menu=False)
 		commons.printSuccess('Device installed!')
 
-	commons.returnToMainMenu(ctx)
+	commons.returnToMainMenu(ctx, pause=True)
 
 
 @click.command(name="uninstallSoundDevice")
@@ -81,7 +81,7 @@ def uninstallSoundDevice(ctx: click.Context, device: str, return_to_main_menu: b
 			commons.printSuccess('Device uninstalled!')
 
 	if return_to_main_menu:
-		commons.returnToMainMenu(ctx)
+		commons.returnToMainMenu(ctx, pause=True)
 
 
 def getDeviceName(ctx: click.Context) -> str:
@@ -94,7 +94,7 @@ def getDeviceName(ctx: click.Context) -> str:
 
 	if not answer:
 		commons.printError('Cannot continue without device information')
-		commons.returnToMainMenu(ctx)
+		commons.returnToMainMenu(ctx, pause=True)
 		return ''
 
 	return answer['device']
@@ -232,14 +232,14 @@ def installAlice(ctx: click.Context, force: bool):
 						fp.write(chunk)
 	except Exception as e:
 		commons.printError(f'Failed downloading ProjectAlice.yaml {e}')
-		commons.returnToMainMenu(ctx)
+		commons.returnToMainMenu(ctx, pause=True)
 
 	with confFile.open(mode='r') as f:
 		try:
 			confs = yaml.safe_load(f)
 		except yaml.YAMLError as e:
 			commons.printError(f'Failed reading projectalice.yaml {e}')
-			commons.returnToMainMenu(ctx)
+			commons.returnToMainMenu(ctx, pause=True)
 
 	confs['adminPinCode'] = int(answers['adminPinCode'])
 	confs['mqttHost'] = answers['mqttHost']

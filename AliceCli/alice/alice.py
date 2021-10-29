@@ -40,7 +40,7 @@ def updateAlice(ctx: click.Context):
 
 	commons.SSH.exec_command('sudo systemctl start ProjectAlice')
 	commons.printSuccess('Alice updated!')
-	commons.returnToMainMenu(ctx)
+	commons.returnToMainMenu(ctx, pause=True)
 
 
 @click.command(name='do')
@@ -58,4 +58,4 @@ def systemctl(ctx: click.Context, option: str):
 		line = stdout.readline()
 
 	commons.printSuccess('Done!')
-	commons.returnToMainMenu(ctx)
+	commons.returnToMainMenu(ctx, pause=True)

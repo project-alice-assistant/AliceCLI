@@ -108,7 +108,7 @@ def discover(ctx: click.Context, network: str, all_devices: bool, return_to_main
 @click.option('-pw', '--password', required=False, type=str, default='')
 @click.option('-r', '--return_to_main_menu', required=False, type=bool, default=True)
 @click.pass_context
-def connect(ctx: click.Context, ip_address: str, port: int, user: str, password: str, return_to_main_menu: bool) -> Optional[paramiko.SSHClient]: #NOSONAR
+def connect(ctx: click.Context, ip_address: str, port: int, user: str, password: str, return_to_main_menu: bool, noExceptHandling: bool = False) -> Optional[paramiko.SSHClient]:  # NOSONAR
 	global SSH, IP_REGEX, CONNECTED_TO
 	remoteAuthorizedKeysFile = '~/.ssh/authorized_keys'
 	confFile = Path(Path.home(), '.pacli/configs.json')
@@ -185,12 +185,15 @@ def connect(ctx: click.Context, ip_address: str, port: int, user: str, password:
 			ssh.connect(hostname=ip_address, port=port, username=user, pkey=key)
 
 	except Exception as e:
-		printError(f'Failed connecting to device: {e}')
-		if ip_address in confs['servers'] and not password:
-			confs['servers'].pop(ip_address, None)
-			confFile.write_text(json.dumps(confs))
-			ctx.invoke(connect, ip_address=ip_address, user=user, return_to_main_menu=return_to_main_menu)
-			return
+		if not noExceptHandling:
+			printError(f'Failed connecting to device: {e}')
+			if ip_address in confs['servers'] and not password:
+				confs['servers'].pop(ip_address, None)
+				confFile.write_text(json.dumps(confs))
+				ctx.invoke(connect, ip_address=ip_address, user=user, return_to_main_menu=return_to_main_menu)
+				return
+		else:
+			raise
 	else:
 		printSuccess('Successfully connected to device')
 		SSH = ssh
@@ -318,7 +321,9 @@ def returnToMainMenu(ctx: click.Context, pause: bool = False, message: str = '')
 
 	stopAnimation()
 	if pause:
-		click.pause(message)
+		click.echo(message)
+		click.pause('Press any key to continue')
+
 	ctx.invoke(MainMenu.mainMenu)
 
 

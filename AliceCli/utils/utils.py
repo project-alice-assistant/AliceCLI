@@ -64,7 +64,7 @@ def changePassword(ctx: click.Context, current_password: str = None, password: s
 
 		if answers['npassword'] != answers['npassword2']:
 			commons.printError('New passwords do not match')
-			commons.returnToMainMenu(ctx)
+			commons.returnToMainMenu(ctx, pause=True)
 			return
 
 		current_password = answers['cpassword']
@@ -79,7 +79,7 @@ def changePassword(ctx: click.Context, current_password: str = None, password: s
 	else:
 		commons.printError(f'Something went wrong: {error}')
 
-	commons.returnToMainMenu(ctx)
+	commons.returnToMainMenu(ctx, pause=True)
 
 
 @click.command(name='changeHostname')
@@ -120,7 +120,7 @@ def changeHostname(ctx: click.Context, hostname: str):
 	else:
 		commons.printError('Failed changing device name...')
 
-	commons.returnToMainMenu(ctx)
+	commons.returnToMainMenu(ctx, pause=True)
 
 
 @click.command(name='reboot')
@@ -132,20 +132,26 @@ def reboot(ctx: click.Context, return_to_main_menu: bool = True): #NOSONAR
 	commons.waitAnimation()
 	commons.SSH.exec_command('sudo reboot')
 	address = commons.CONNECTED_TO
-	time.sleep(5)
-	while i := 0 < 4:  # NOSONAR
-		ctx.invoke(commons.connect, ip_address=address, return_to_main_menu=False)
-		if commons.SSH:
-			commons.printSuccess('Device rebooted!')
-			if return_to_main_menu:
-				commons.returnToMainMenu(ctx)
-			return
-		i += 1  # NOSONAR
+	ctx.invoke(commons.disconnect)
+	rebooted = False
+	for i in range(1, 5):
+		try:
+			commons.printInfo(f'Trying to contact device, attempt {i} on 5...')
+			ctx.invoke(commons.connect, ip_address=address, return_to_main_menu=False, noExceptHandling=True)
+			if commons.SSH:
+				rebooted = True
+				break
+			time.sleep(5)
+		except:
+			pass  # Let's try again...
 
-	commons.printError('Failed rebooting device')
+	if not rebooted:
+		commons.printError('Failed rebooting device')
+	else:
+		commons.printSuccess('Device rebooted!')
 
 	if return_to_main_menu:
-		commons.returnToMainMenu(ctx)
+		commons.returnToMainMenu(ctx, pause=True)
 
 
 @click.command(name='updateSystem')
@@ -162,7 +168,7 @@ def updateSystem(ctx: click.Context):
 		line = stdout.readline()
 
 	commons.printSuccess('Device updated!')
-	commons.returnToMainMenu(ctx)
+	commons.returnToMainMenu(ctx, pause=True)
 
 
 @click.command(name='upgradeSystem')
@@ -186,14 +192,14 @@ def upgradeSystem(ctx: click.Context):
 @click.pass_context
 @checkConnection
 def soundTest(ctx: click.Context):
-	click.secho('Testing sound output...', color='yellow')
-
+	commons.printInfo('Testing sound output...')
 	commons.waitAnimation()
 	stdin, stdout, stderr = commons.SSH.exec_command('sudo aplay /usr/share/sounds/alsa/Front_Center.wav')
 	line = stdout.readline()
 	commons.stopAnimation()
 	click.secho(line)
-	commons.returnToMainMenu(ctx)
+	commons.printInfo('Ok, I played it and you should have heard the common "left, center" sound test')
+	commons.returnToMainMenu(ctx, pause=True)
 
 
 @click.command(name='systemlogs')
