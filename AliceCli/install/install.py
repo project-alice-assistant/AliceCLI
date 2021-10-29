@@ -287,7 +287,7 @@ def installAlice(ctx: click.Context, force: bool):
 
 @click.command(name='prepareSdCard')
 @click.pass_context
-def prepareSdCard(ctx: click.Context):
+def prepareSdCard(ctx: click.Context):  # NOSONAR
 
 	flasherAvailable = which('balena') is not None
 	downloadsPath = Path.home() / 'Downloads'
@@ -295,9 +295,9 @@ def prepareSdCard(ctx: click.Context):
 
 	questions = [
 		{
-			'type': 'confirm',
+			'type'   : 'confirm',
 			'message': 'Do you want to flash your SD card with Raspberry PI OS?',
-			'name': 'doFlash',
+			'name'   : 'doFlash',
 			'default': False
 		},
 		{
