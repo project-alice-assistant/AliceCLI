@@ -292,8 +292,12 @@ def _animation():
 def _ctrlCExplained():
 	ANIMATION_FLAG.set()
 	while ANIMATION_FLAG.is_set():
-		click.secho(f'\rPress CTRL-C to quit\r', nl=False, fg='yellow')
-		time.sleep(0.1)
+		try:
+			click.secho(f'\rPress CTRL-C to quit\r', nl=False, fg='yellow')
+			time.sleep(0.1)
+		except KeyboardInterrupt:
+			ANIMATION_FLAG.clear()
+			raise KeyboardInterrupt
 
 
 def askReturnToMainMenu(ctx: click.Context):
@@ -344,11 +348,11 @@ def validateHostname(hostname: str) -> str:
 def sshCmd(cmd: str):
 	stdin, stdout, stderr = SSH.exec_command(cmd)
 
-	while line := stdout.readline():
-		try:
+	try:
+		while line := stdout.readline():
 			click.secho(line, nl=False, color='yellow')
-		except KeyboardInterrupt:
-			raise
+	except KeyboardInterrupt:
+		raise  # Let the caller handle this....
 
 
 def sshCmdWithReturn(cmd: str) -> Tuple:
@@ -385,9 +389,10 @@ def getUpdateSource(definedSource: str) -> str:
 
 
 def showLogs(ctx: click.Context, logFile: str):
-	ctrlCExplained()
+	printInfo('To return to main menu, press CTRL+C')
+	click.pause('Press any key to watch the requested logs')
 	try:
-		sshCmd(f'tail -f {logFile} & {{ read ; kill %1; }}')
+		sshCmd(f'tail -f {logFile} -n 250 & {{ read ; kill %1; }}')
 	except KeyboardInterrupt:
 		SSH.exec_command('\r')
 		returnToMainMenu(ctx)
