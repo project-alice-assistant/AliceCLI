@@ -64,7 +64,7 @@ def installSoundDevice(ctx: click.Context, device: str):
 @click.option('-d', '--device', type=click.Choice(['respeaker2', 'respeaker4', 'respeaker4MicLinearArray', 'respeaker6MicArray'], case_sensitive=False))
 @click.pass_context
 @checkConnection
-def uninstallSoundDevice(ctx: click.Context, device: str, return_to_main_menu: bool = True): #NOSONAR
+def uninstallSoundDevice(ctx: click.Context, device: str, return_to_main_menu: bool = True):  # NOSONAR
 	click.secho('Uninstalling audio hardware', color='yellow')
 	commons.waitAnimation()
 	if not device:
@@ -112,9 +112,9 @@ def installAlice(ctx: click.Context, force: bool):
 		if not force:
 			commons.printError('Alice seems to already exist on that host')
 			answer = prompt(questions={
-				'type': 'confirm',
+				'type'   : 'confirm',
 				'message': 'Erase and reinstall',
-				'name': 'confirm',
+				'name'   : 'confirm',
 				'default': False
 			})
 			if not answer['confirm']:
@@ -126,10 +126,10 @@ def installAlice(ctx: click.Context, force: bool):
 
 	questions = [
 		{
-			'type': 'password',
-			'name': 'adminPinCode',
-			'message': 'Enter an admin pin code. It must be made of 4 characters, all digits only. (default: 1234)',
-			'default': '1234',
+			'type'    : 'password',
+			'name'    : 'adminPinCode',
+			'message' : 'Enter an admin pin code. It must be made of 4 characters, all digits only. (default: 1234)',
+			'default' : '1234',
 			'validate': lambda code: code.isdigit() and int(code) < 10000
 		},
 		{
@@ -147,11 +147,11 @@ def installAlice(ctx: click.Context, force: bool):
 			'validate': lambda port: port.isdigit()
 		},
 		{
-			'type'    : 'list',
-			'name'    : 'activeLanguage',
-			'message' : 'What language should Alice be using?',
-			'default' : 'en',
-			'choices' : [
+			'type'   : 'list',
+			'name'   : 'activeLanguage',
+			'message': 'What language should Alice be using?',
+			'default': 'en',
+			'choices': [
 				'en',
 				'de',
 				'fr',
@@ -377,7 +377,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 			'name'   : 'image',
 			'message': 'Select the image you want to flash',
 			'choices': images,
-			'when': lambda answers: answers['doFlash']
+			'when'   : lambda answers: answers['doFlash']
 		},
 		{
 			'type'   : 'list',

@@ -33,6 +33,7 @@ def cli(ctx: click.Context):
 		click.clear()
 		ctx.invoke(MainMenu.mainMenu)
 
+
 cli.add_command(MainMenu.mainMenu)
 cli.add_command(commons.connect)
 cli.add_command(commons.discover)

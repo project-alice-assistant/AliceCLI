@@ -47,7 +47,7 @@ ANIMATION_THREAD: Optional[Thread] = None
 @click.option('-n', '--network', required=False, type=str, default='')
 @click.option('-a', '--all_devices', is_flag=True)
 @click.pass_context
-def discover(ctx: click.Context, network: str, all_devices: bool, return_to_main_menu: bool = True): #NOSONAR
+def discover(ctx: click.Context, network: str, all_devices: bool, return_to_main_menu: bool = True):  # NOSONAR
 	click.clear()
 	click.secho('Discovering devices on your network, please wait', fg='yellow')
 
@@ -79,11 +79,11 @@ def discover(ctx: click.Context, network: str, all_devices: bool, return_to_main
 					click.secho(f'{device}: {name[0].replace(".home", "")}', fg='yellow')
 					devices.append(device)
 			except:
-				continue #If no name, we don't need the device anyway
+				continue  # If no name, we don't need the device anyway
 
 		stopAnimation()
 
-		devices.append('Return to main menu') #NOSONAR
+		devices.append('Return to main menu')  # NOSONAR
 		answer = prompt(questions={
 			'type'   : 'list',
 			'name'   : 'device',
@@ -203,7 +203,7 @@ def connect(ctx: click.Context, ip_address: str, port: int, user: str, password:
 			keyFile = Path(Path.home(), f'.ssh/{filename}')
 			confs['servers'][ip_address] = {
 				'keyFile': filename,
-				'user': user
+				'user'   : user
 			}
 			confFile.write_text(json.dumps(confs))
 
@@ -219,6 +219,7 @@ def connect(ctx: click.Context, ip_address: str, port: int, user: str, password:
 
 	if return_to_main_menu:
 		returnToMainMenu(ctx)
+
 
 def printError(text: str):
 	ANIMATION_FLAG.clear()
@@ -304,8 +305,8 @@ def askReturnToMainMenu(ctx: click.Context):
 	answers = prompt(
 		questions=[
 			{
-				'type': 'list',
-				'name': 'return',
+				'type'   : 'list',
+				'name'   : 'return',
 				'message': 'What do you want to do now',
 				'choices': [
 					'Return to main menu',

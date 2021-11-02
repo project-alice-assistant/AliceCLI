@@ -107,7 +107,6 @@ def changeHostname(ctx: click.Context, hostname: str):
 
 		hostname = answer['hostname']
 
-
 	commons.waitAnimation()
 	commons.SSH.exec_command(f"sudo hostnamectl set-hostname '{hostname}'")
 	ctx.invoke(reboot, ctx, return_to_main_menu=False)
@@ -126,7 +125,7 @@ def changeHostname(ctx: click.Context, hostname: str):
 @click.command(name='reboot')
 @click.pass_context
 @checkConnection
-def reboot(ctx: click.Context, return_to_main_menu: bool = True): #NOSONAR
+def reboot(ctx: click.Context, return_to_main_menu: bool = True):  # NOSONAR
 	click.secho('Rebooting device, please wait', color='yellow')
 
 	commons.waitAnimation()

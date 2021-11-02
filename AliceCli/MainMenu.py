@@ -36,7 +36,7 @@ def mainMenu(ctx: click.Context):
 		questions=[
 			{
 				'type'   : 'list',
-				'name': 'mainMenu',
+				'name'   : 'mainMenu',
 				'message': 'Please select an option',
 				'choices': [
 					'Discover devices on network',
