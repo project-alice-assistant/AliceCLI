@@ -346,11 +346,12 @@ def validateHostname(hostname: str) -> str:
 		raise click.BadParameter('Hostname cannot contain special characters')
 
 
-def sshCmd(cmd: str):
+def sshCmd(cmd: str, hide: bool = False):
 	stdin, stdout, stderr = SSH.exec_command(cmd)
 
 	while line := stdout.readline():
-		click.secho(line, nl=False, color='yellow')
+		if not hide:
+			click.secho(line, nl=False, color='yellow')
 
 
 def sshCmdWithReturn(cmd: str) -> Tuple:

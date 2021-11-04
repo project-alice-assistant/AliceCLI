@@ -16,8 +16,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>
 #
 #  Last modified: 2021.07.31 at 15:54:28 CEST
-
 import click
+import json
 import platform
 import psutil
 import requests
@@ -350,7 +350,7 @@ def installAlice(ctx: click.Context, force: bool):
 		confs['installSound'] = True
 
 	confs['asr'] = answers.get('asr', 'pocketsphinx').lower()
-	confs['googleServiceFile'] = answers.get('googleServiceFile', '')
+	confs['googleServiceFile'] = json.loads(answers.get('googleServiceFile', '{}'))
 	confs['awsAccessKey'] = answers.get('awsAccessKey', '')
 	confs['awsSecretKey'] = answers.get('awsSecretKey', '')
 	confs['tts'] = answers.get('tts', 'pico').lower()
@@ -380,7 +380,7 @@ def installAlice(ctx: click.Context, force: bool):
 
 	commons.printInfo('Cloning Alice')
 	sshCmd('git clone https://github.com/project-alice-assistant/ProjectAlice.git ~/ProjectAlice')
-	sshCmd(f'echo "{confFile.read_text()}" > ~/ProjectAlice/ProjectAlice.yaml')
+	sshCmd(f'echo "{confFile.read_text()}" > ~/ProjectAlice/ProjectAlice.yaml', hide=True)
 	sshCmd('sudo cp ~/ProjectAlice/ProjectAlice.yaml /boot/ProjectAlice.yaml')
 
 	commons.printInfo('Start install process')
