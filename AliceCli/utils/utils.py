@@ -224,4 +224,5 @@ def displayLogs(ctx: click.Context, file: str):
 		commons.sshCmd(f'tail -n 250 -f {file} & {{ read ; kill %1; }}')
 	except:
 		commons.SSH.exec_command('\r')
-		commons.returnToMainMenu(ctx)
+
+	commons.returnToMainMenu(ctx)

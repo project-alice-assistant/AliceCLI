@@ -19,7 +19,6 @@
 import click
 import platform
 import psutil
-import re
 import requests
 import subprocess
 import yaml
@@ -255,8 +254,8 @@ def installAlice(ctx: click.Context, force: bool):
 			'when'   : lambda answers: answers['advancedConfigs'] and answers['tts'] == 'Amazon'
 		},
 		{
-			'type'   : 'password',
-			'message': 'Enter your Google service file content',
+			'type'   : 'input',
+			'message': 'Enter your Google service file path',
 			'name'   : 'googleServiceFile',
 			'when'   : lambda answers: answers['advancedConfigs'] and (answers['asr'] == 'Google' or answers['tts'] == 'Google')
 		},
@@ -360,9 +359,8 @@ def installAlice(ctx: click.Context, force: bool):
 	confs['enableDataStoring'] = answers.get('enableDataStoring', True)
 	confs['skillAutoUpdate'] = answers.get('skillAutoUpdate', True)
 
-	googleServiceFile = answers.get('googleServiceFile', '{}')
-	regex = re.compile(r'[\n\r\t]')
-	confs['googleServiceFile'] = regex.sub('', googleServiceFile)
+	if Path(answers.get('googleServiceFile', '')).exists():
+		confs['googleServiceFile'] = Path(answers['googleServiceFile']).read_text()
 
 	if answers['advancedConfigs']:
 		if answers['asr'].lower() == 'google':
@@ -383,7 +381,13 @@ def installAlice(ctx: click.Context, force: bool):
 
 	commons.printInfo('Cloning Alice')
 	sshCmd('git clone https://github.com/project-alice-assistant/ProjectAlice.git ~/ProjectAlice')
-	sshCmd(f'echo "{confFile.read_text()}" > ~/ProjectAlice/ProjectAlice.yaml', hide=True)
+
+	#sshCmd('sudo rm ~/ProjectAlice/ProjectAlice.yaml')
+	sftp = commons.SSH.open_sftp()
+	sftp.put(str(confFile), '/home/pi/ProjectAlice/ProjectAlice.yaml')
+	sftp.close()
+
+	#sshCmd(f'echo "{confFile.read_text()}" > ~/ProjectAlice/ProjectAlice.yaml', hide=True)
 	sshCmd('sudo rm /boot/ProjectAlice.yaml')
 	sshCmd('sudo cp ~/ProjectAlice/ProjectAlice.yaml /boot/ProjectAlice.yaml')
 
