@@ -380,14 +380,14 @@ def installAlice(ctx: click.Context, force: bool):
 
 	commons.printInfo('Cloning Alice')
 	sshCmd('git clone https://github.com/project-alice-assistant/ProjectAlice.git ~/ProjectAlice')
-	sshCmd(f'echo "{confFile.read_text()}" > ~/ProjectAlice/ProjectAlice.yaml', hide=True)
+	sshCmd(f'echo "{confFile.read_text()}" > ~/ProjectAlice/ProjectAlice.yaml')
 	sshCmd('sudo cp ~/ProjectAlice/ProjectAlice.yaml /boot/ProjectAlice.yaml')
 
 	commons.printInfo('Start install process')
 	sshCmd('cd ~/ProjectAlice/ && python3 main.py')
 
 	commons.printSuccess('Alice has completed the basic installation! She\'s now working further to complete the installation, let\'s see what she does!')
-	ctx.invoke(systemLogs, agree=True)
+	ctx.invoke(systemLogs)
 
 
 @click.command(name='prepareSdCard')
