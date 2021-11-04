@@ -209,11 +209,102 @@ def installAlice(ctx: click.Context, force: bool):
 			'message': 'Do you want to install HLC? HLC can pilot leds such as the ones on respeakers to provide visual feedback.',
 			'name'   : 'installHLC',
 			'default': False
+		},
+		{
+			'type'   : 'confirm',
+			'message': 'Do you want to set more advanced configs? If you do, DO NOT ABORT IN THE MIDDLE!',
+			'name'   : 'advancedConfigs',
+			'default': False
+		},
+		{
+			'type'   : 'list',
+			'message': 'Select the ASR engine you want to use',
+			'name'   : 'asr',
+			'values' : [
+				'Google',
+				'Snips (English only!)',
+				'Coqui',
+				'Deepspeech',
+				'Pocketsphinx'
+			],
+			'when'   : lambda answers: answers['advancedConfigs']
+		},
+		{
+			'type'   : 'list',
+			'message': 'Select the TTS engine you want to use',
+			'name'   : 'tts',
+			'values' : [
+				'Pico',
+				'Mycroft',
+				'Amazon',
+				'Google',
+				'Watson'
+			],
+			'when'   : lambda answers: answers['advancedConfigs']
+		},
+		{
+			'type'   : 'input',
+			'message': 'Enter your AWS access key',
+			'name'   : 'awsAccessKey',
+			'when'   : lambda answers: answers['advancedConfigs'] and answers['tts'] == 'Amazon'
+		},
+		{
+			'type'   : 'input',
+			'message': 'Enter your AWS secret key',
+			'name'   : 'awsSecretKey',
+			'when'   : lambda answers: answers['advancedConfigs'] and answers['tts'] == 'Amazon'
+		},
+		{
+			'type'   : 'input',
+			'message': 'Enter your Google service file content',
+			'name'   : 'googleServiceFile',
+			'when'   : lambda answers: answers['advancedConfigs'] and (answers['asr'] == 'Google' or answers['tts'] == 'Google')
+		},
+		{
+			'type'   : 'confirm',
+			'message': 'Do you want Alice to use short replies?',
+			'name'   : 'shortReplies',
+			'default': False,
+			'when'   : lambda answers: answers['advancedConfigs']
+		},
+		{
+			'type'   : 'confirm',
+			'message': 'Do you want to activate the developer mode?',
+			'name'   : 'devMode',
+			'default': False,
+			'when'   : lambda answers: answers['advancedConfigs']
+		},
+		{
+			'type'   : 'input',
+			'message': 'Enter your Github username. This is used for skill development. If not needed, leave blank',
+			'name'   : 'githubUsername',
+			'default': '',
+			'when'   : lambda answers: answers['advancedConfigs']
+		},
+		{
+			'type'   : 'password',
+			'message': 'Enter your Github access token. This is used for skill development',
+			'name'   : 'githubToken',
+			'when'   : lambda answers: answers['advancedConfigs'] and answer['githubUsername']
+		},
+		{
+			'type'   : 'confirm',
+			'message': 'Enable telemetry data storing?',
+			'name'   : 'enableDataStoring',
+			'default': True,
+			'when'   : lambda answers: answers['advancedConfigs']
+		},
+		{
+			'type'   : 'confirm',
+			'message': 'Enable skill auto update?',
+			'name'   : 'skillAutoUpdate',
+			'default': True,
+			'when'   : lambda answers: answers['advancedConfigs']
 		}
 	]
 
 	answers = prompt(questions)
-	if len(answers) < len(questions):
+	if len(answers) < 10:
 		commons.returnToMainMenu(ctx)
 		return
 
@@ -249,6 +340,7 @@ def installAlice(ctx: click.Context, force: bool):
 	confs['useHLC'] = answers['installHLC']
 	confs['aliceUpdateChannel'] = answers['releaseType']
 	confs['skillUpdateChannel'] = answers['releaseType']
+	confs['ttsLanguage'] = f'{answers["activeLanguage"].lower()}-{answers["activeCountryCode"].upper()}'
 
 	if answers['soundInstalled']:
 		confs['installSound'] = False
@@ -256,6 +348,24 @@ def installAlice(ctx: click.Context, force: bool):
 			confs['audioHardware'][answers['audioDevice']] = True
 	else:
 		confs['installSound'] = True
+
+	confs['asr'] = answers.get('asr', 'pocketsphinx').lower()
+	confs['googleServiceFile'] = answers.get('googleServiceFile', '')
+	confs['awsAccessKey'] = answers.get('awsAccessKey', '')
+	confs['awsSecretKey'] = answers.get('awsSecretKey', '')
+	confs['tts'] = answers.get('tts', 'pico').lower()
+	confs['shortReplies'] = answers.get('shortReplies', False)
+	confs['devMode'] = answers.get('devMode', False)
+	confs['githubUsername'] = answers.get('githubUsername', '')
+	confs['githubToken'] = answers.get('githubToken', '')
+	confs['enableDataStoring'] = answers.get('enableDataStoring', True)
+	confs['skillAutoUpdate'] = answers.get('skillAutoUpdate', True)
+
+	if answers['advancedConfigs']:
+		if answers['asr'].lower() == 'google':
+			confs['keepASROffline'] = False
+		if answers['tts'].lower() in ['amazon', 'google', 'watson']:
+			confs['keepTTSOffline'] = False
 
 	with confFile.open(mode='w') as f:
 		yaml.dump(confs, f)
@@ -432,14 +542,14 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 	i = 0
 	for dp in psutil.disk_partitions():
 		i += 1
-		if 'removable' not in dp.opts.lower():
+		if 'rw,removable' not in dp.opts.lower():
 			continue
 		drives.append(dp.device)
 		if i == int(answers['drive'][-1]):
 			drive = dp.device
 
 	if not drive:
-		commons.printError('Something went wrong flashing/writing on your SD card, sorry, I cannot find the SD card device anymore...')
+		commons.printError('Something went weird flashing/writing on your SD card, sorry, I cannot find the SD card device anymore...')
 		questions = [
 			{
 				'type'   : 'list',
