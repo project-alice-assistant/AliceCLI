@@ -135,7 +135,7 @@ def reboot(ctx: click.Context, return_to_main_menu: bool = True):  # NOSONAR
 	rebooted = False
 	for i in range(1, 5):
 		try:
-			commons.printInfo(f'Trying to contact device, attempt {i} on 5...')
+			commons.printInfo(f'Trying to contact device, attempt {i} of 5...')
 			ctx.invoke(commons.connect, ip_address=address, return_to_main_menu=False, noExceptHandling=True)
 			if commons.SSH:
 				rebooted = True
@@ -202,14 +202,16 @@ def soundTest(ctx: click.Context):
 
 
 @click.command(name='systemLogs')
+@click.option('-a', '--agree', is_flag=True)
 @click.pass_context
 @checkConnection
-def systemLogs(ctx: click.Context):
-	commons.showLogs(ctx, '/var/log/syslog')
+def systemLogs(ctx: click.Context, agree: bool):
+	commons.showLogs(ctx, '/var/log/syslog', auto_agree=agree)
 
 
 @click.command(name='aliceLogs')
+@click.option('-a', '--agree', is_flag=True)
 @click.pass_context
 @checkConnection
-def aliceLogs(ctx: click.Context):
-	commons.showLogs(ctx, '~/ProjectAlice/var/logs/logs.log')
+def aliceLogs(ctx: click.Context, agree: bool):
+	commons.showLogs(ctx, '~/ProjectAlice/var/logs/logs.log', auto_agree=agree)

@@ -220,7 +220,7 @@ def installAlice(ctx: click.Context, force: bool):
 			'type'   : 'list',
 			'message': 'Select the ASR engine you want to use',
 			'name'   : 'asr',
-			'values' : [
+			'choices': [
 				'Google',
 				'Snips (English only!)',
 				'Coqui',
@@ -233,7 +233,7 @@ def installAlice(ctx: click.Context, force: bool):
 			'type'   : 'list',
 			'message': 'Select the TTS engine you want to use',
 			'name'   : 'tts',
-			'values' : [
+			'choices': [
 				'Pico',
 				'Mycroft',
 				'Amazon',
@@ -243,19 +243,19 @@ def installAlice(ctx: click.Context, force: bool):
 			'when'   : lambda answers: answers['advancedConfigs']
 		},
 		{
-			'type'   : 'input',
+			'type'   : 'password',
 			'message': 'Enter your AWS access key',
 			'name'   : 'awsAccessKey',
 			'when'   : lambda answers: answers['advancedConfigs'] and answers['tts'] == 'Amazon'
 		},
 		{
-			'type'   : 'input',
+			'type'   : 'password',
 			'message': 'Enter your AWS secret key',
 			'name'   : 'awsSecretKey',
 			'when'   : lambda answers: answers['advancedConfigs'] and answers['tts'] == 'Amazon'
 		},
 		{
-			'type'   : 'input',
+			'type'   : 'password',
 			'message': 'Enter your Google service file content',
 			'name'   : 'googleServiceFile',
 			'when'   : lambda answers: answers['advancedConfigs'] and (answers['asr'] == 'Google' or answers['tts'] == 'Google')
@@ -285,7 +285,7 @@ def installAlice(ctx: click.Context, force: bool):
 			'type'   : 'password',
 			'message': 'Enter your Github access token. This is used for skill development',
 			'name'   : 'githubToken',
-			'when'   : lambda answers: answers['advancedConfigs'] and answer['githubUsername']
+			'when'   : lambda answers: answers['advancedConfigs'] and answers['githubUsername']
 		},
 		{
 			'type'   : 'confirm',
@@ -339,7 +339,7 @@ def installAlice(ctx: click.Context, force: bool):
 	confs['activeCountryCode'] = answers['activeCountryCode']
 	confs['useHLC'] = answers['installHLC']
 	confs['aliceUpdateChannel'] = answers['releaseType']
-	confs['skillUpdateChannel'] = answers['releaseType']
+	confs['skillsUpdateChannel'] = answers['releaseType']
 	confs['ttsLanguage'] = f'{answers["activeLanguage"].lower()}-{answers["activeCountryCode"].upper()}'
 
 	if answers['soundInstalled']:
@@ -387,7 +387,7 @@ def installAlice(ctx: click.Context, force: bool):
 	sshCmd('cd ~/ProjectAlice/ && python3 main.py')
 
 	commons.printSuccess('Alice has completed the basic installation! She\'s now working further to complete the installation, let\'s see what she does!')
-	ctx.invoke(systemLogs)
+	ctx.invoke(systemLogs, agree=True)
 
 
 @click.command(name='prepareSdCard')

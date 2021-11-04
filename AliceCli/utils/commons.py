@@ -17,12 +17,12 @@
 #
 #  Last modified: 2021.03.07 at 13:31:43 CET
 #  Last modified by: Psycho
-
 import click
 import json
 import paramiko
 import re
 import requests
+import select
 import socket
 import sys
 import time
@@ -349,11 +349,8 @@ def validateHostname(hostname: str) -> str:
 def sshCmd(cmd: str):
 	stdin, stdout, stderr = SSH.exec_command(cmd)
 
-	try:
-		while line := stdout.readline():
-			click.secho(line, nl=False, color='yellow')
-	except KeyboardInterrupt:
-		raise  # Let the caller handle this....
+	while line := stdout.readline():
+		click.secho(line, nl=False, color='yellow')
 
 
 def sshCmdWithReturn(cmd: str) -> Tuple:
@@ -389,11 +386,19 @@ def getUpdateSource(definedSource: str) -> str:
 	return str(updateSource)
 
 
-def showLogs(ctx: click.Context, logFile: str):
-	printInfo('To return to main menu, press CTRL+C')
-	click.pause('Press any key to watch the requested logs')
-	try:
-		sshCmd(f'tail -f {logFile} -n 250 & {{ read ; kill %1; }}')
-	except KeyboardInterrupt:
-		SSH.exec_command('\r')
-		returnToMainMenu(ctx)
+def showLogs(ctx: click.Context, logFile: str, auto_agree: bool = True):
+	if not auto_agree:
+		click.pause('To return to main menu, press CTRL+C. Press any key to watch the requested logs')
+
+	transport = SSH.get_transport()
+	channel = transport.open_session()
+	channel.exec_command(f'tail -f {logFile} -n 250 & {{ read ; kill %1; }}')
+	while True:
+		try:
+			rl, wl, xl = select.select([channel], [], [], 0.0)
+			if len(rl) > 0:
+				click.echo(channel.recv(1024), nl=False)
+		except:
+			break
+
+	returnToMainMenu(ctx)
