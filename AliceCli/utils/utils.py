@@ -222,6 +222,6 @@ def aliceLogs(ctx: click.Context):
 def displayLogs(ctx: click.Context, file: str):
 	try:
 		commons.sshCmd(f'tail -n 250 -f {file} & {{ read ; kill %1; }}')
-	except KeyboardInterrupt:
+	except:
 		commons.SSH.exec_command('\r')
 		commons.returnToMainMenu(ctx)

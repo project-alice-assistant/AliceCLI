@@ -17,9 +17,9 @@
 #
 #  Last modified: 2021.07.31 at 15:54:28 CEST
 import click
-import json
 import platform
 import psutil
+import re
 import requests
 import subprocess
 import yaml
@@ -350,7 +350,6 @@ def installAlice(ctx: click.Context, force: bool):
 		confs['installSound'] = True
 
 	confs['asr'] = answers.get('asr', 'pocketsphinx').lower()
-	confs['googleServiceFile'] = json.dumps(json.loads(answers.get('googleServiceFile', '{}')))
 	confs['awsAccessKey'] = answers.get('awsAccessKey', '')
 	confs['awsSecretKey'] = answers.get('awsSecretKey', '')
 	confs['tts'] = answers.get('tts', 'pico').lower()
@@ -360,6 +359,10 @@ def installAlice(ctx: click.Context, force: bool):
 	confs['githubToken'] = answers.get('githubToken', '')
 	confs['enableDataStoring'] = answers.get('enableDataStoring', True)
 	confs['skillAutoUpdate'] = answers.get('skillAutoUpdate', True)
+
+	googleServiceFile = answers.get('googleServiceFile', '{}')
+	regex = re.compile(r'[\n\r\t]')
+	confs['googleServiceFile'] = regex.sub('', googleServiceFile)
 
 	if answers['advancedConfigs']:
 		if answers['asr'].lower() == 'google':
@@ -380,7 +383,8 @@ def installAlice(ctx: click.Context, force: bool):
 
 	commons.printInfo('Cloning Alice')
 	sshCmd('git clone https://github.com/project-alice-assistant/ProjectAlice.git ~/ProjectAlice')
-	sshCmd(f'echo "{confFile.read_text()}" > ~/ProjectAlice/ProjectAlice.yaml')
+	sshCmd(f'echo "{confFile.read_text()}" > ~/ProjectAlice/ProjectAlice.yaml', hide=True)
+	sshCmd('sudo rm /boot/ProjectAlice.yaml')
 	sshCmd('sudo cp ~/ProjectAlice/ProjectAlice.yaml /boot/ProjectAlice.yaml')
 
 	commons.printInfo('Start install process')
