@@ -202,16 +202,26 @@ def soundTest(ctx: click.Context):
 
 
 @click.command(name='systemLogs')
-@click.option('-a', '--agree', is_flag=True)
 @click.pass_context
 @checkConnection
-def systemLogs(ctx: click.Context, agree: bool):
-	commons.showLogs(ctx, '/var/log/syslog', auto_agree=agree)
+def systemLogs(ctx: click.Context):
+	ctx.invoke(displayLogs, file='/var/log/syslog')
 
 
 @click.command(name='aliceLogs')
-@click.option('-a', '--agree', is_flag=True)
 @click.pass_context
 @checkConnection
-def aliceLogs(ctx: click.Context, agree: bool):
-	commons.showLogs(ctx, '~/ProjectAlice/var/logs/logs.log', auto_agree=agree)
+def aliceLogs(ctx: click.Context):
+	ctx.invoke(displayLogs, file='~/ProjectAlice/var/logs/logs.log')
+
+
+@click.command(name='logs')
+@click.option('-f', '--file', type=str, required=True)
+@click.pass_context
+@checkConnection
+def displayLogs(ctx: click.Context, file: str):
+	try:
+		commons.sshCmd(f'tail -n 250 -f {file} & {{ read ; kill %1; }}')
+	except KeyboardInterrupt:
+		commons.SSH.exec_command('\r')
+		commons.returnToMainMenu(ctx)

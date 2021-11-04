@@ -350,7 +350,7 @@ def installAlice(ctx: click.Context, force: bool):
 		confs['installSound'] = True
 
 	confs['asr'] = answers.get('asr', 'pocketsphinx').lower()
-	confs['googleServiceFile'] = json.loads(answers.get('googleServiceFile', '{}'))
+	confs['googleServiceFile'] = json.dumps(json.loads(answers.get('googleServiceFile', '{}')))
 	confs['awsAccessKey'] = answers.get('awsAccessKey', '')
 	confs['awsSecretKey'] = answers.get('awsSecretKey', '')
 	confs['tts'] = answers.get('tts', 'pico').lower()

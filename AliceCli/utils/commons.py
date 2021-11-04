@@ -22,7 +22,6 @@ import json
 import paramiko
 import re
 import requests
-import select
 import socket
 import sys
 import time
@@ -385,21 +384,3 @@ def getUpdateSource(definedSource: str) -> str:
 		updateSource = versions[0]
 
 	return str(updateSource)
-
-
-def showLogs(ctx: click.Context, logFile: str, auto_agree: bool = True):
-	if not auto_agree:
-		click.pause('To return to main menu, press CTRL+C. Press any key to watch the requested logs')
-
-	transport = SSH.get_transport()
-	channel = transport.open_session()
-	channel.exec_command(f'tail -f {logFile} -n 250 & {{ read ; kill %1; }}')
-	while True:
-		try:
-			rl, wl, xl = select.select([channel], [], [], 0.0)
-			if len(rl) > 0:
-				click.echo(channel.recv(1024), nl=False)
-		except:
-			break
-
-	returnToMainMenu(ctx)
