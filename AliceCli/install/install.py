@@ -20,8 +20,10 @@ import click
 import platform
 import psutil
 import requests
+import stat
 import subprocess
 import yaml
+import zipfile
 from PyInquirer import prompt
 from bs4 import BeautifulSoup
 from pathlib import Path
@@ -423,7 +425,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 	]
 
 	answers = prompt(questions)
-	answers.setdefault('installBalena', False)
+	answers.setdefault('installBalena', True)
 
 	if not answers or 'doFlash' not in answers:
 		commons.returnToMainMenu(ctx)
@@ -434,21 +436,40 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 		return
 	elif answers['doFlash'] and not flasherAvailable and answers['installBalena']:
 		commons.printInfo('Installing Balena-cli, please wait...')
-
+		balenaVersion = 'v12.51.1'
 		if operatingSystem == 'windows':
-			url = 'https://github.com/balena-io/balena-cli/releases/download/v12.44.9/balena-cli-v12.44.9-windows-x64-installer.exe'
+			url = f'https://github.com/balena-io/balena-cli/releases/download/{balenaVersion}/balena-cli-{balenaVersion}-windows-x64-installer.exe'
 		elif operatingSystem == 'linux':
-			url = 'https://github.com/balena-io/balena-cli/releases/download/v12.44.9/balena-cli-v12.44.9-linux-x64-standalone.zip'
+			url = f'https://github.com/balena-io/balena-cli/releases/download/{balenaVersion}/balena-cli-{balenaVersion}-linux-x64-standalone.zip'
 		else:
-			url = 'https://github.com/balena-io/balena-cli/releases/download/v12.44.9/balena-cli-v12.44.9-macOS-x64-installer.pkg'
+			url = f'https://github.com/balena-io/balena-cli/releases/download/{balenaVersion}/balena-cli-{balenaVersion}-macOS-x64-installer.pkg'
 
 		destination = downloadsPath / url.split('/')[-1]
-		doDownload(url=url, destination=destination)
+
+		if destination.exists():
+			commons.printInfo(f'Skipping download, using existing: {destination}')
+		else:
+			commons.printInfo("Downloading...")
+			doDownload(url=url, destination=destination)
 
 		if operatingSystem == 'windows':
-			commons.printInfo("Downloaded! I'm starting the installation, please follow the instructions and come back when it's done!")
+			commons.printInfo("Starting the installation, please follow the instructions and come back when it's done!")
 			subprocess.Popen(str(destination).split(), shell=True)
 			click.pause('Press a key when the installation process is done! Please close your terminal and restart it to continue the flashing process')
+			exit(0)
+		elif operatingSystem == 'linux':
+			balenaPath = Path.joinpath(Path.cwd(), 'balena-cli', 'balena')
+			if balenaPath.exists():
+				commons.printInfo(f'Looks like a previous install exists, skipping.')
+			else:
+				commons.printInfo(f'Extracting {destination} to ./balena-cli/...')
+				archive = zipfile.ZipFile(destination)
+				archive.extractall()  # extract to ./balena-cli/ i.e. sub dir of working directory.
+				commons.printInfo('Setting ./balena-cli/belena as executable...')
+				# set executable permission
+				# # from https://stackoverflow.com/questions/12791997/how-do-you-do-a-simple-chmod-x-from-within-python
+				balenaPath.chmod(509)  # now shell `./balena-cli/balena version` works
+			click.pause('Done. Press a key')
 			exit(0)
 		else:
 			click.pause('I have no idea how to install stuff on Mac, so I have downloaded the tool for you, please install it. Oh, and contact Psycho to let him know how to install a pkg file on Mac ;-)')

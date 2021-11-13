@@ -109,6 +109,8 @@ venv.bak/
 #vs code stuff
 .vscode/
 
+# belana-cli install
+balena-cli/
 
 .DS_Store
 config.py
