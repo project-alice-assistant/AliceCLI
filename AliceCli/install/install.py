@@ -17,6 +17,7 @@
 #
 #  Last modified: 2021.07.31 at 15:54:28 CEST
 import click
+import os
 import platform
 import psutil
 import requests
@@ -458,8 +459,11 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 			click.pause('Press a key when the installation process is done! Please close your terminal and restart it to continue the flashing process')
 			exit(0)
 		elif operatingSystem == 'linux':
-			balenaPath = Path.joinpath(Path.cwd(), 'balena-cli', 'balena')
-			if balenaPath.exists():
+			balenaExecutablePath = Path.joinpath(Path.cwd(), 'balena-cli', 'balena')
+			sysPath = os.environ["PATH"]
+			commons.printInfo(f"current PATH: {sysPath}")
+			commons.printInfo(f"install dir: {balenaExecutablePath.parent}")
+			if balenaExecutablePath.exists():
 				commons.printInfo(f'Looks like a previous install exists, skipping.')
 			else:
 				commons.printInfo(f'Extracting {destination} to ./balena-cli/...')
@@ -468,7 +472,11 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 				commons.printInfo('Setting ./balena-cli/belena as executable...')
 				# set executable permission
 				# # from https://stackoverflow.com/questions/12791997/how-do-you-do-a-simple-chmod-x-from-within-python
-				balenaPath.chmod(509)  # now shell `./balena-cli/balena version` works
+				balenaExecutablePath.chmod(509)  # now shell `./balena-cli/balena version` works
+				commons.printInfo('Adding ./balena-cli to PATH...')
+				os.environ['PATH'] += os.pathsep + balenaExecutablePath.parent.__str__()
+				sysPath = os.environ["PATH"]
+				commons.printInfo(f"new PATH: {sysPath}")
 			click.pause('Done. Press a key')
 			exit(0)
 		else:
