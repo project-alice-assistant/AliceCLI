@@ -22,10 +22,11 @@ from pathlib import Path
 
 from setuptools import find_packages, setup
 
+from AliceCli.MainMenu import VERSION
 
 setup(
 	name='projectalice-cli',
-	version='0.1.8',
+	version=VERSION,
 	long_description=Path('README.md').read_text(encoding='utf8'),
 	long_description_content_type='text/markdown',
 	python_requires='>=3.8',

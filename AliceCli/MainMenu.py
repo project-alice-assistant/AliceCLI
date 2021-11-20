@@ -17,21 +17,55 @@
 #
 #  Last modified: 2021.03.07 at 10:56:35 CET
 #  Last modified by: Psycho
+import re
+import subprocess
 
 import click
 import sys
 from PyInquirer import Separator, prompt
 
+from AliceCli.Version import Version
 from AliceCli.alice.alice import systemctl, updateAlice
 from AliceCli.install.install import installAlice, installSoundDevice, prepareSdCard, uninstallSoundDevice
 from AliceCli.utils.commons import connect, discover
 from AliceCli.utils.utils import aliceLogs, changeHostname, changePassword, reboot, soundTest, systemLogs, updateSystem, upgradeSystem
 
+VERSION = Version.fromString('0.2.1')
+CHECKED = False
 
 @click.command(name='main_menu')
 @click.pass_context
 def mainMenu(ctx: click.Context):
+	global CHECKED
+
 	click.clear()
+
+	if not CHECKED:
+		result = subprocess.run('pip index versions projectalice-cli'.split(), capture_output=True, text=True)
+		if 'error' not in result.stderr.lower():
+			regex = re.compile(r"INSTALLED:.*(?P<installed>[\d]+\.[\d]+\.[\d]+)\n.*LATEST:.*(?P<latest>[\d]+\.[\d]+\.[\d]+)")
+			match = regex.search(result.stdout.strip())
+
+			if not match:
+				click.echo(f'Project Alice CLI version {str(VERSION)}\n')
+				click.secho(message='Failed checking CLI version\n', fg='red')
+
+			installed = VERSION.fromString(match.group('installed'))
+			latest = VERSION.fromString(match.group('latest'))
+
+			if installed < latest:
+				click.secho(f'Project Alice CLI version {str(VERSION)}\n', fg='red')
+				click.secho(message=f'CLI version {latest} is available, you should consider updating using `pip install projectalice-cli --upgrade`\n', fg='red')
+			else:
+				click.secho(f'Project Alice CLI version {str(VERSION)}\n', fg='green')
+		else:
+			click.echo(f'Project Alice CLI version {str(VERSION)}\n')
+			click.secho(message='Failed checking CLI version\n', fg='red')
+
+		CHECKED = True
+	else:
+		click.echo(f'Project Alice CLI version {str(VERSION)}\n')
+
 	answers = prompt(
 		questions=[
 			{
