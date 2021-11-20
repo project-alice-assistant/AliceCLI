@@ -39,7 +39,7 @@ setup(
 	author_email='laurentchervet@bluewin.ch',
 	description='Project Alice CLI tool',
 	install_requires=[
-        'Click',
+        'click',
 		'paramiko',
 		'PyInquirer',
 		'networkscan',
