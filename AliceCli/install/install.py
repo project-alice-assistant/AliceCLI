@@ -359,7 +359,7 @@ def installAlice(ctx: click.Context, force: bool):
 	confs['enableDataStoring'] = answers.get('enableDataStoring', True)
 	confs['skillAutoUpdate'] = answers.get('skillAutoUpdate', True)
 
-	if Path(answers.get('googleServiceFile', '')).exists():
+	if 'googleServiceFile' in answers and Path(answers.get('googleServiceFile')).exists():
 		confs['googleServiceFile'] = Path(answers['googleServiceFile']).read_text()
 
 	if answers['advancedConfigs']:

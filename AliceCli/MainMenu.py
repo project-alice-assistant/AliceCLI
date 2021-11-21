@@ -17,10 +17,9 @@
 #
 #  Last modified: 2021.03.07 at 10:56:35 CET
 #  Last modified by: Psycho
+import click
 import re
 import subprocess
-
-import click
 import sys
 from PyInquirer import Separator, prompt
 
@@ -30,7 +29,8 @@ from AliceCli.install.install import installAlice, installSoundDevice, prepareSd
 from AliceCli.utils.commons import connect, discover
 from AliceCli.utils.utils import aliceLogs, changeHostname, changePassword, reboot, soundTest, systemLogs, updateSystem, upgradeSystem
 
-VERSION = Version.fromString('0.2.1')
+
+VERSION = Version.fromString('0.2.2')
 CHECKED = False
 
 @click.command(name='main_menu')
