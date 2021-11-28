@@ -21,6 +21,7 @@ import platform
 import psutil
 import requests
 import subprocess
+import time
 import yaml
 from PyInquirer import prompt
 from bs4 import BeautifulSoup
@@ -541,20 +542,26 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 
 		if operatingSystem == 'windows' or operatingSystem == 'linux':
 			subprocess.run(f'balena local flash {str(file)} --drive {answers["drive"]} --yes'.split(), shell=True)
+			time.sleep(5)
 		else:
 			commons.returnToMainMenu(ctx, pause=True, message='Flashing only supported on Windows and Linux systems for now. If you have the knowledge to implement it on other systems, feel free to pull request!')
 			return
 
-	drive = ''
 	drives = list()
-	i = 0
-	for dp in psutil.disk_partitions():
-		i += 1
-		if 'rw,removable' not in dp.opts.lower():
-			continue
-		drives.append(dp.device)
-		if i == int(answers['drive'][-1]):
-			drive = dp.device
+	drive = ''
+	while not drives:
+		i = 0
+		for dp in psutil.disk_partitions():
+			i += 1
+			if 'rw,removable' not in dp.opts.lower():
+				continue
+			drives.append(dp.device)
+			if i == int(answers['drive'][-1]):
+				drive = dp.device
+
+		if not drives:
+			commons.printError('For some reason I cannot find the SD boot partition. Please unplug, replug your SD back and press any key to continue')
+			click.pause()
 
 	if not drive:
 		commons.printError('Something went weird flashing/writing on your SD card, sorry, I cannot find the SD card device anymore...')
