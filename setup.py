@@ -45,7 +45,10 @@ setup(
 		'psutil~=5.8.0',
 		'beautifulsoup4~=4.10.0',
 		'tqdm~=4.62.3',
-		'pytest~=6.2.5'
+		'pytest~=6.2.5',
+		'coverage~=6.2',
+		'pytest-cov~=3.0.0',
+		'coveralls~=3.3.1'
     ],
 	classifiers=[
 		"Development Status :: 4 - Beta",
