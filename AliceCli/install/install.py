@@ -419,7 +419,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 			'message': 'Balena-cli was not found on your system, do you want to install it?',
 			'name'   : 'installBalena',
 			'default': True,
-			'when'   : lambda flasherAvailable: not flasherAvailable
+			'when'   : lambda answers: not flasherAvailable
 		}
 	]
 
