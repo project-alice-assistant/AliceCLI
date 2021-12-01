@@ -30,13 +30,13 @@ from AliceCli.utils.commons import connect, discover
 from AliceCli.utils.utils import aliceLogs, changeHostname, changePassword, reboot, soundTest, systemLogs, updateSystem, upgradeSystem
 
 
-VERSION = str(Version.fromString('0.2.4'))
+VERSION = ''
 CHECKED = False
 
 @click.command(name='main_menu')
 @click.pass_context
 def mainMenu(ctx: click.Context):
-	global CHECKED
+	global CHECKED, VERSION
 
 	click.clear()
 
@@ -47,24 +47,24 @@ def mainMenu(ctx: click.Context):
 			match = regex.search(result.stdout.strip())
 
 			if not match:
-				click.echo(f'Project Alice CLI version {str(VERSION)}\n')
 				click.secho(message='Failed checking CLI version\n', fg='red')
-
-			installed = Version.fromString(match.group('installed'))
-			latest = Version.fromString(match.group('latest'))
-
-			if installed < latest:
-				click.secho(f'Project Alice CLI version {str(VERSION)}\n', fg='red')
-				click.secho(message=f'CLI version {str(latest)} is available, you should consider updating using `pip install projectalice-cli --upgrade`\n', fg='red')
 			else:
-				click.secho(f'Project Alice CLI version {str(VERSION)}\n', fg='green')
+				installed = Version.fromString(match.group('installed'))
+				latest = Version.fromString(match.group('latest'))
+
+				if installed < latest:
+					click.secho(f'Project Alice CLI version {str(installed)}\n', fg='red')
+					click.secho(message=f'CLI version {str(latest)} is available, you should consider updating using `pip install projectalice-cli --upgrade`\n', fg='red')
+				else:
+					click.secho(f'Project Alice CLI version {str(installed)}\n', fg='green')
+
+				VERSION = str(installed)
 		else:
-			click.echo(f'Project Alice CLI version {str(VERSION)}\n')
 			click.secho(message='Failed checking CLI version\n', fg='red')
 
 		CHECKED = True
 	else:
-		click.echo(f'Project Alice CLI version {str(VERSION)}\n')
+		click.echo(f'Project Alice CLI version {VERSION}\n')
 
 	answers = prompt(
 		questions=[
