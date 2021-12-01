@@ -30,7 +30,7 @@ from AliceCli.utils.commons import connect, discover
 from AliceCli.utils.utils import aliceLogs, changeHostname, changePassword, reboot, soundTest, systemLogs, updateSystem, upgradeSystem
 
 
-VERSION = Version.fromString('0.2.3')
+VERSION = str(Version.fromString('0.2.4'))
 CHECKED = False
 
 @click.command(name='main_menu')
