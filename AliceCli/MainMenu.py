@@ -55,7 +55,7 @@ def mainMenu(ctx: click.Context):
 
 			if installed < latest:
 				click.secho(f'Project Alice CLI version {str(VERSION)}\n', fg='red')
-				click.secho(message=f'CLI version {latest} is available, you should consider updating using `pip install projectalice-cli --upgrade`\n', fg='red')
+				click.secho(message=f'CLI version {str(latest)} is available, you should consider updating using `pip install projectalice-cli --upgrade`\n', fg='red')
 			else:
 				click.secho(f'Project Alice CLI version {str(VERSION)}\n', fg='green')
 		else:
