@@ -44,7 +44,8 @@ setup(
 		'requests~=2.26.0',
 		'psutil~=5.8.0',
 		'beautifulsoup4~=4.10.0',
-		'tqdm~=4.62.3'
+		'tqdm~=4.62.3',
+		'pytest~=6.2.5'
     ],
 	classifiers=[
 		"Development Status :: 4 - Beta",
