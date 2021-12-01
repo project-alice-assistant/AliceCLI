@@ -19,10 +19,10 @@
 #  Last modified by: Psycho
 
 from pathlib import Path
-
 from setuptools import find_packages, setup
 
 from AliceCli.MainMenu import VERSION
+
 
 setup(
 	name='projectalice-cli',
@@ -39,15 +39,15 @@ setup(
 	author_email='laurentchervet@bluewin.ch',
 	description='Project Alice CLI tool',
 	install_requires=[
-        'click',
-		'paramiko',
-		'PyInquirer',
-		'networkscan',
-		'pyyaml',
-		'requests',
-		'psutil',
-		'beautifulsoup4',
-		'tqdm'
+		'click~=8.0.3',
+		'paramiko~=2.8.1',
+		'PyInquirer~=1.0.3',
+		'networkscan~=1.0.9',
+		'pyyaml~=6.0',
+		'requests~=2.26.0',
+		'psutil~=5.8.0',
+		'beautifulsoup4~=4.10.0',
+		'tqdm~=4.62.3'
     ],
 	classifiers=[
 		"Development Status :: 4 - Beta",
