@@ -50,8 +50,8 @@ def mainMenu(ctx: click.Context):
 				click.echo(f'Project Alice CLI version {str(VERSION)}\n')
 				click.secho(message='Failed checking CLI version\n', fg='red')
 
-			installed = VERSION.fromString(match.group('installed'))
-			latest = VERSION.fromString(match.group('latest'))
+			installed = Version.fromString(match.group('installed'))
+			latest = Version.fromString(match.group('latest'))
 
 			if installed < latest:
 				click.secho(f'Project Alice CLI version {str(VERSION)}\n', fg='red')
