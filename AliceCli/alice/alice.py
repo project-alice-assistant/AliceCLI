@@ -59,3 +59,18 @@ def systemctl(ctx: click.Context, option: str):
 
 	commons.printSuccess('Done!')
 	commons.returnToMainMenu(ctx, pause=True)
+
+
+@click.command(name='reportBug')
+@click.pass_context
+@checkConnection
+def reportBug(ctx: click.Context):
+	click.secho('Enabling inbuilt bug reporter', color='yellow')
+
+	commons.waitAnimation()
+	commons.SSH.exec_command('touch ~/ProjectAlice/alice.bugreport')
+	click.secho('Restarting Alice', color='yellow')
+	commons.SSH.exec_command('sudo systemctl restart ProjectAlice')
+
+	commons.printSuccess('Bug reporter enabled and Alice restart. As soon as a fatal error occurs and/or she is stopped, the session report will be posted to Github!')
+	commons.returnToMainMenu(ctx, pause=True)

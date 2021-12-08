@@ -17,14 +17,15 @@
 #
 #  Last modified: 2021.03.07 at 10:56:35 CET
 #  Last modified by: Psycho
-import click
 import re
 import subprocess
 import sys
+
+import click
 from PyInquirer import Separator, prompt
 
 from AliceCli.Version import Version
-from AliceCli.alice.alice import systemctl, updateAlice
+from AliceCli.alice.alice import reportBug, systemctl, updateAlice
 from AliceCli.install.install import installAlice, installSoundDevice, prepareSdCard, uninstallSoundDevice
 from AliceCli.utils.commons import connect, discover
 from AliceCli.utils.utils import aliceLogs, changeHostname, changePassword, reboot, soundTest, systemLogs, updateSystem, upgradeSystem
@@ -94,6 +95,7 @@ def mainMenu(ctx: click.Context):
 					'Upgrade system',
 					'Reboot device',
 					'Uninstall your sound device',
+					'Enable bug report for next session',
 					'Check Alice logs',
 					'Check system logs',
 					'Exit'
@@ -147,5 +149,7 @@ def mainMenu(ctx: click.Context):
 		ctx.invoke(aliceLogs)
 	elif answers['mainMenu'] == 'Check system logs':
 		ctx.invoke(systemLogs)
+	elif answers['mainMenu'] == 'Enable bug report for next session':
+		ctx.invoke(reportBug)
 	else:
 		ctx.invoke(mainMenu)
