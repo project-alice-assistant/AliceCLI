@@ -332,7 +332,7 @@ def installAlice(ctx: click.Context, force: bool):
 			commons.printError(f'Failed reading projectalice.yaml {e}')
 			commons.returnToMainMenu(ctx, pause=True)
 
-	confs['adminPinCode'] = int(answers['adminPinCode'])
+	confs['adminPinCode'] = int(answers['adminPinCode']).zfill(4)
 	confs['mqttHost'] = answers['mqttHost']
 	confs['mqttPort'] = int(answers['mqttPort'])
 	confs['activeLanguage'] = answers['activeLanguage']
