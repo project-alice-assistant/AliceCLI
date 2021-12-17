@@ -55,7 +55,7 @@ def installSoundDevice(ctx: click.Context, device: str):
 		sshCmd('git -C ~/seeed-voicecard/ checkout v5.9 && git -C ~/seeed-voicecard/ pull')
 		sshCmd('cd ~/seeed-voicecard/ && sudo ./install.sh')
 		ctx.invoke(reboot, return_to_main_menu=False)
-		commons.printSuccess('Device installed!')
+		commons.printSuccess('Sound device installed!')
 
 	commons.returnToMainMenu(ctx, pause=True)
 
@@ -78,7 +78,7 @@ def uninstallSoundDevice(ctx: click.Context, device: str, return_to_main_menu: b
 			sshCmd('cd ~/seeed-voicecard/ && sudo ./uninstall.sh')
 			sshCmd('sudo rm -rf ~/seeed-voicecard/')
 			ctx.invoke(reboot, return_to_main_menu=return_to_main_menu)
-			commons.printSuccess('Device uninstalled!')
+			commons.printSuccess('Sound device uninstalled!')
 
 	if return_to_main_menu:
 		commons.returnToMainMenu(ctx, pause=True)
