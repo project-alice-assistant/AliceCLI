@@ -19,13 +19,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 import re
+from dataclasses import dataclass
 
 
 @dataclass(order=True)
-class Version:
+class Version(Object):
 	mainVersion: int = 0
 	updateVersion: int = 0
 	hotfix: int = 0
