@@ -457,27 +457,30 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 
 	images = list()
 	if answers['doFlash']:
-		directories = list()
 		commons.printInfo('Checking for Raspberry PI OS images, please wait....')
 		# Potential local files
 		downloadsPath = Path.home() / 'Downloads'
 		for file in downloadsPath.glob('*raspi*.zip'):
 			images.append(str(file))
 
-		# Get a list of available images online
-		url = 'https://downloads.raspberrypi.org/raspios_lite_armhf/images/'
-		page = requests.get(url)
-		if page.status_code == 200:
-			soup = BeautifulSoup(page.text, features='html.parser')
-			directories = [url + node.get('href') for node in soup.find_all('a') if node.get('href').endswith('/')]
-			if directories:
-				directories.pop(0)  # This is the return link, remove it...
+		images.append('https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2021-05-28/2021-05-07-raspios-buster-armhf-lite.zip')
 
-		for directory in directories:
-			page = requests.get(directory)
-			if page.status_code == 200:
-				soup = BeautifulSoup(page.text, features='html.parser')
-				images.extend([directory + node.get('href') for node in soup.find_all('a') if node.get('href').endswith('.zip')])
+		# Deactivated for now, we enforce Buster only!
+		# directories = list()
+		# Get a list of available images online
+		# url = 'https://downloads.raspberrypi.org/raspios_lite_armhf/images/'
+		# page = requests.get(url)
+		# if page.status_code == 200:
+		# 	soup = BeautifulSoup(page.text, features='html.parser')
+		# 	directories = [url + node.get('href') for node in soup.find_all('a') if node.get('href').endswith('/')]
+		# 	if directories:
+		# 		directories.pop(0)  # This is the return link, remove it...
+		#
+		# for directory in directories:
+		# 	page = requests.get(directory)
+		# 	if page.status_code == 200:
+		# 		soup = BeautifulSoup(page.text, features='html.parser')
+		# 		images.extend([directory + node.get('href') for node in soup.find_all('a') if node.get('href').endswith('.zip')])
 
 	drives = dict()
 	output = subprocess.run(f'balena util available-drives'.split(), capture_output=True, shell=True).stdout.decode()
@@ -494,7 +497,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 		{
 			'type'   : 'list',
 			'name'   : 'image',
-			'message': 'Select the image you want to flash',
+			'message': 'Select the image you want to flash. Keep in mind we only officially support the "Buster" Debian distro!',
 			'choices': images,
 			'when'   : lambda answers: answers['doFlash']
 		},
