@@ -18,9 +18,11 @@
 #  Last modified: 2021.03.04 at 17:03:56 CET
 #  Last modified by: Psycho
 
-import click
 import time
-from PyInquirer import prompt
+
+import click
+import inquirer
+from inquirer import prompt
 
 from AliceCli.utils import commons
 from AliceCli.utils.decorators import checkConnection
@@ -36,25 +38,22 @@ def changePassword(ctx: click.Context, current_password: str = None, password: s
 
 	if not password or not current_password:
 		questions = [
-			{
-				'type'    : 'password',
-				'name'    : 'cpassword',
-				'message' : 'Enter current password (default: raspberry)',
-				'default' : 'raspberry',
-				'validate': lambda pwd: len(pwd) > 0
-			},
-			{
-				'type'    : 'password',
-				'name'    : 'npassword',
-				'message' : 'Enter new password',
-				'validate': lambda pwd: len(pwd) > 0
-			},
-			{
-				'type'    : 'password',
-				'name'    : 'npassword2',
-				'message' : 'Confirm new password',
-				'validate': lambda pwd: len(pwd) > 0
-			}
+			inquirer.Password(
+				name = 'cpassword',
+				message = 'Enter current password (default: raspberry)',
+				default = 'raspberry',
+				validate = lambda _, pwd: len(pwd) > 0
+			),
+			inquirer.Password(
+				name = 'npassword',
+				message = 'Enter new password',
+				validate = lambda _, pwd: len(pwd) > 0
+			),
+			inquirer.Password(
+				name = 'npassword2',
+				message = 'Confirm new password',
+				validate = lambda _, pwd: len(pwd) > 0
+			)
 		]
 
 		answers = prompt(questions=questions)
@@ -91,13 +90,12 @@ def changeHostname(ctx: click.Context, hostname: str):
 
 	if not hostname:
 		question = [
-			{
-				'type'    : 'input',
-				'name'    : 'hostname',
-				'message' : 'Enter new device name',
-				'default' : 'ProjectAlice',
-				'validate': lambda name: commons.validateHostname(name) is not None
-			}
+			inquirer.Text(
+				name = 'hostname',
+				message = 'Enter new device name',
+				default = 'ProjectAlice',
+				validate = lambda _, name: commons.validateHostname(name) is not None
+			)
 		]
 
 		answer = prompt(questions=question)

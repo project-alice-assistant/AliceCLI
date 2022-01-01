@@ -22,7 +22,8 @@ import subprocess
 import sys
 
 import click
-from PyInquirer import Separator, prompt
+import inquirer
+from inquirer import prompt
 
 from AliceCli.Version import Version
 from AliceCli.alice.alice import reportBug, systemctl, updateAlice
@@ -69,27 +70,26 @@ def mainMenu(ctx: click.Context):
 
 	answers = prompt(
 		questions=[
-			{
-				'type'   : 'list',
-				'name'   : 'mainMenu',
-				'message': 'Please select an option',
-				'choices': [
+			inquirer.List(
+				name = 'mainMenu',
+				message = 'What would you like to do now?',
+	            choices = [
 					'Discover devices on network',
 					'Connect to a device',
-					Separator(),
+					#Separator(),
 					'Prepare your SD card',
 					'Change device\'s password',
 					'Set device\'s name',
 					'Install your sound device',
 					'Sound test',
 					'Install Alice',
-					Separator(),
+					#Separator(),
 					'Start Alice',
 					'Restart Alice',
 					'Stop Alice',
 					'Enable Alice service',
 					'Disable Alice service',
-					Separator(),
+					#Separator(),
 					'Update Alice',
 					'Update system',
 					'Upgrade system',
@@ -100,7 +100,7 @@ def mainMenu(ctx: click.Context):
 					'Check system logs',
 					'Exit'
 				]
-			}
+			)
 		]
 	)
 

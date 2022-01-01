@@ -25,7 +25,7 @@ from setuptools import find_packages, setup
 
 setup(
 	name='projectalice-cli',
-	version='0.2.6',
+	version='0.2.7',
 	long_description=Path('README.md').read_text(encoding='utf8'),
 	long_description_content_type='text/markdown',
 	python_requires='>=3.8',
@@ -40,7 +40,7 @@ setup(
 	install_requires=[
 		'click~=8.0.3',
 		'paramiko~=2.8.1',
-		'PyInquirer~=1.0.3',
+		'inquirer~=2.9.1',
 		'networkscan~=1.0.9',
 		'pyyaml~=6.0',
 		'requests~=2.26.0',

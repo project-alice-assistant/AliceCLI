@@ -16,17 +16,17 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>
 #
 #  Last modified: 2021.07.31 at 15:54:28 CEST
-import click
 import platform
-import psutil
-import requests
 import subprocess
 import time
-import yaml
-from PyInquirer import prompt
-from bs4 import BeautifulSoup
 from pathlib import Path
 from shutil import which
+
+import click
+import psutil
+import requests
+import yaml
+from inquirer import prompt
 from tqdm import tqdm
 
 from AliceCli.utils import commons
@@ -130,21 +130,21 @@ def installAlice(ctx: click.Context, force: bool):
 			'name'    : 'adminPinCode',
 			'message' : 'Enter an admin pin code. It must be made of 4 characters, all digits only. (default: 1234)',
 			'default' : '1234',
-			'validate': lambda code: code.isdigit() and int(code) < 10000
+			'validate': lambda _, code: code.isdigit() and int(code) < 10000
 		},
 		{
 			'type'    : 'input',
 			'name'    : 'mqttHost',
 			'message' : 'Mqtt host:',
 			'default' : 'localhost',
-			'validate': lambda string: len(string) > 0
+			'validate': lambda _, string: len(string) > 0
 		},
 		{
 			'type'    : 'input',
 			'name'    : 'mqttPort',
 			'message' : 'Mqtt port:',
 			'default' : '1883',
-			'validate': lambda port: port.isdigit()
+			'validate': lambda _, port: port.isdigit()
 		},
 		{
 			'type'   : 'list',
@@ -163,7 +163,7 @@ def installAlice(ctx: click.Context, force: bool):
 			'name'    : 'activeCountryCode',
 			'message' : 'What country code should Alice be using?',
 			'default' : 'US',
-			'validate': lambda string: len(string) > 0
+			'validate': lambda _, string: len(string) > 0
 		},
 		{
 			'type'   : 'list',
@@ -227,7 +227,7 @@ def installAlice(ctx: click.Context, force: bool):
 				'Deepspeech',
 				'Pocketsphinx'
 			],
-			'when'   : lambda answers: answers['advancedConfigs']
+			'ignore'   : lambda userAnswers: not userAnswers['advancedConfigs']
 		},
 		{
 			'type'   : 'list',
@@ -240,66 +240,66 @@ def installAlice(ctx: click.Context, force: bool):
 				'Google',
 				'Watson'
 			],
-			'when'   : lambda answers: answers['advancedConfigs']
+			'ignore'   : lambda userAnswers: not userAnswers['advancedConfigs']
 		},
 		{
 			'type'   : 'password',
 			'message': 'Enter your AWS access key',
 			'name'   : 'awsAccessKey',
-			'when'   : lambda answers: answers['advancedConfigs'] and answers['tts'] == 'Amazon'
+			'ignore'   : lambda userAnswers: not userAnswers['advancedConfigs'] or userAnswers['tts'] != 'Amazon'
 		},
 		{
 			'type'   : 'password',
 			'message': 'Enter your AWS secret key',
 			'name'   : 'awsSecretKey',
-			'when'   : lambda answers: answers['advancedConfigs'] and answers['tts'] == 'Amazon'
+			'ignore'   : lambda userAnswers: not userAnswers['advancedConfigs'] or userAnswers['tts'] != 'Amazon'
 		},
 		{
 			'type'   : 'input',
 			'message': 'Enter your Google service file path',
 			'name'   : 'googleServiceFile',
-			'when'   : lambda answers: answers['advancedConfigs'] and (answers['asr'] == 'Google' or answers['tts'] == 'Google')
+			'ignore'   : lambda userAnswers: not userAnswers['advancedConfigs'] or ((userAnswers['asr'] != 'Google' and userAnswers['tts'] != 'Google'))
 		},
 		{
 			'type'   : 'confirm',
 			'message': 'Do you want Alice to use short replies?',
 			'name'   : 'shortReplies',
 			'default': False,
-			'when'   : lambda answers: answers['advancedConfigs']
+			'ignore'   : lambda userAnswers: not userAnswers['advancedConfigs']
 		},
 		{
 			'type'   : 'confirm',
 			'message': 'Do you want to activate the developer mode?',
 			'name'   : 'devMode',
 			'default': False,
-			'when'   : lambda answers: answers['advancedConfigs']
+			'ignore'   : lambda userAnswers: not userAnswers['advancedConfigs']
 		},
 		{
 			'type'   : 'input',
 			'message': 'Enter your Github username. This is used for skill development. If not needed, leave blank',
 			'name'   : 'githubUsername',
 			'default': '',
-			'when'   : lambda answers: answers['advancedConfigs']
+			'ignore'   : lambda userAnswers: not userAnswers['advancedConfigs']
 		},
 		{
 			'type'   : 'password',
 			'message': 'Enter your Github access token. This is used for skill development',
 			'name'   : 'githubToken',
-			'when'   : lambda answers: answers['advancedConfigs'] and answers['githubUsername']
+			'ignore'   : lambda userAnswers: not userAnswers['advancedConfigs'] and answers['githubUsername']
 		},
 		{
 			'type'   : 'confirm',
 			'message': 'Enable telemetry data storing?',
 			'name'   : 'enableDataStoring',
 			'default': True,
-			'when'   : lambda answers: answers['advancedConfigs']
+			'ignore'   : lambda userAnswers: not userAnswers['advancedConfigs']
 		},
 		{
 			'type'   : 'confirm',
 			'message': 'Enable skill auto update?',
 			'name'   : 'skillAutoUpdate',
 			'default': True,
-			'when'   : lambda answers: answers['advancedConfigs']
+			'ignore'   : lambda userAnswers: not userAnswers['advancedConfigs']
 		}
 	]
 
@@ -419,7 +419,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 			'message': 'Balena-cli was not found on your system, do you want to install it?',
 			'name'   : 'installBalena',
 			'default': True,
-			'when'   : lambda answers: not flasherAvailable
+			'ignore'   : lambda _: flasherAvailable
 		}
 	]
 
@@ -499,7 +499,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 			'name'   : 'image',
 			'message': 'Select the image you want to flash. Keep in mind we only officially support the "Buster" Debian distro!',
 			'choices': images,
-			'when'   : lambda answers: answers['doFlash']
+			'ignore'   : lambda userAnswers: not userAnswers['doFlash']
 		},
 		{
 			'type'   : 'list',
@@ -511,7 +511,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 			'type'    : 'input',
 			'name'    : 'ssid',
 			'message' : 'Enter the name of your Wifi network',
-			'validate': lambda c: len(c) > 0
+			'validate': lambda _, c: len(c) > 0
 		},
 		{
 			'type'   : 'password',
@@ -522,7 +522,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 			'type'    : 'input',
 			'name'    : 'country',
 			'message' : 'Enter your country code (example: CH, US, DE, FR etc)',
-			'validate': lambda c: len(c) == 2
+			'validate': lambda _, c: len(c) == 2
 		}
 	]
 
