@@ -25,11 +25,7 @@ from setuptools import find_packages, setup
 
 setup(
 	name='projectalice-cli',
-<<<<<<< HEAD
-	version='0.2.8',
-=======
-	version='0.2.6',
->>>>>>> f42a0d0 (Revert "Part 1 moving to inquirer #4")
+	version='0.2.7',
 	long_description=Path('README.md').read_text(encoding='utf8'),
 	long_description_content_type='text/markdown',
 	python_requires='>=3.8',
