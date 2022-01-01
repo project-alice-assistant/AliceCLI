@@ -24,7 +24,7 @@ from dataclasses import dataclass
 
 
 @dataclass(order=True)
-class Version(object):
+class Version(Object):
 	mainVersion: int = 0
 	updateVersion: int = 0
 	hotfix: int = 0

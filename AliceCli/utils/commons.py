@@ -17,22 +17,20 @@
 #
 #  Last modified: 2021.03.07 at 13:31:43 CET
 #  Last modified by: Psycho
+import click
 import json
+import paramiko
 import re
+import requests
 import socket
 import sys
 import time
 import uuid
+from PyInquirer import prompt
+from networkscan import networkscan
 from pathlib import Path
 from threading import Event, Thread
 from typing import Optional, Tuple
-
-import click
-import inquirer
-import paramiko
-import requests
-from inquirer import prompt
-from networkscan import networkscan
 
 from AliceCli.Version import Version
 
@@ -85,11 +83,12 @@ def discover(ctx: click.Context, network: str, all_devices: bool, return_to_main
 		stopAnimation()
 
 		devices.append('Return to main menu')  # NOSONAR
-		answer = prompt(questions=inquirer.List(
-			name = 'device',
-			message = 'Select the device you want to connect to',
-			choices = devices
-		))
+		answer = prompt(questions={
+			'type'   : 'list',
+			'name'   : 'device',
+			'message': 'Select the device you want to connect to',
+			'choices': devices
+		})
 
 		if not answer or answer['device'] == 'Return to main menu':
 			returnToMainMenu(ctx)
@@ -122,11 +121,12 @@ def connect(ctx: click.Context, ip_address: str, port: int, user: str, password:
 
 	if not ip_address:
 		question = [
-			inquirer.Text(
-				name = 'ip_address',
-		        message = 'Please enter the device IP address',
-				validate = lambda _, ip: IP_REGEX.match(ip) is not None
-			)
+			{
+				'type'    : 'input',
+				'name'    : 'ip_address',
+				'message' : 'Please enter the device IP address',
+				'validate': lambda ip: IP_REGEX.match(ip) is not None
+			}
 		]
 
 		answers = prompt(questions=question)
@@ -146,10 +146,11 @@ def connect(ctx: click.Context, ip_address: str, port: int, user: str, password:
 
 	if not keyFile and not user:
 		question = [
-			inquirer.Text(
-				name = 'user',
-				message = 'Please enter username'
-			)
+			{
+				'type'   : 'input',
+				'name'   : 'user',
+				'message': 'Please enter username'
+			}
 		]
 
 		answers = prompt(questions=question)
@@ -157,10 +158,11 @@ def connect(ctx: click.Context, ip_address: str, port: int, user: str, password:
 
 	if not keyFile and not password:
 		question = [
-			inquirer.Text(
-				name = 'password',
-				message = 'Please enter the connection password',
-			)
+			{
+				'type'   : 'password',
+				'name'   : 'password',
+				'message': 'Please enter the connection password'
+			}
 		]
 
 		answers = prompt(questions=question)
@@ -301,17 +303,18 @@ def _ctrlCExplained():
 def askReturnToMainMenu(ctx: click.Context):
 	answers = prompt(
 		questions=[
-			inquirer.Text(
-				name = 'return',
-				message = 'What do you want to do now',
-				choices = [
+			{
+				'type'   : 'list',
+				'name'   : 'return',
+				'message': 'What do you want to do now',
+				'choices': [
 					'Return to main menu',
 					'Exit'
 				]
-			)
+			}
 		]
 	)
-	if not answers or answers['return'] == 'Exit':
+	if answers['return'] == 'Exit':
 		sys.exit(0)
 	else:
 		returnToMainMenu(ctx)
