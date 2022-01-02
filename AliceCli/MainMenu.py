@@ -22,7 +22,7 @@ import subprocess
 import sys
 
 import click
-from PyInquirer import Separator, prompt
+from InquirerPy import prompt
 
 from AliceCli.Version import Version
 from AliceCli.alice.alice import reportBug, systemctl, updateAlice
@@ -33,6 +33,19 @@ from AliceCli.utils.utils import aliceLogs, changeHostname, changePassword, rebo
 
 VERSION = ''
 CHECKED = False
+
+
+# Copied from https://github.com/CITGuru/PyInquirer/blob/master/PyInquirer/separator.py
+class Separator:
+    line = '-' * 15
+
+    def __init__(self, line=None):
+        if line:
+            self.line = line
+
+    def __str__(self):
+        return self.line
+
 
 @click.command(name='main_menu')
 @click.pass_context

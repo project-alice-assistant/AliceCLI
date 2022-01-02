@@ -26,7 +26,7 @@ import socket
 import sys
 import time
 import uuid
-from PyInquirer import prompt
+from InquirerPy import prompt
 from networkscan import networkscan
 from pathlib import Path
 from threading import Event, Thread

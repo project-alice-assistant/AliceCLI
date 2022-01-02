@@ -20,7 +20,7 @@
 
 import click
 import time
-from PyInquirer import prompt
+from InquirerPy import prompt
 
 from AliceCli.utils import commons
 from AliceCli.utils.decorators import checkConnection
