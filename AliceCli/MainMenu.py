@@ -22,7 +22,7 @@ import subprocess
 import sys
 
 import click
-from InquirerPy import Separator, prompt
+from InquirerPy import prompt
 
 from AliceCli.Version import Version
 from AliceCli.alice.alice import reportBug, systemctl, updateAlice
