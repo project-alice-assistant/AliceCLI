@@ -40,7 +40,7 @@ setup(
 	install_requires=[
 		'click~=8.0.3',
 		'paramiko~=2.8.1',
-		'PyInquirer~=1.0.3',
+		'InquirerPy~=0.3.1',
 		'networkscan~=1.0.9',
 		'pyyaml~=6.0',
 		'requests~=2.26.0',

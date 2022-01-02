@@ -23,7 +23,7 @@ import requests
 import subprocess
 import time
 import yaml
-from PyInquirer import prompt
+from InquirerPy import prompt
 from bs4 import BeautifulSoup
 from pathlib import Path
 from shutil import which
