@@ -16,17 +16,17 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>
 #
 #  Last modified: 2021.07.31 at 15:54:28 CEST
-import click
 import platform
-import psutil
-import requests
 import subprocess
 import time
-import yaml
-from InquirerPy import prompt
-from bs4 import BeautifulSoup
 from pathlib import Path
 from shutil import which
+
+import click
+import psutil
+import requests
+import yaml
+from InquirerPy import prompt
 from tqdm import tqdm
 
 from AliceCli.utils import commons
@@ -206,7 +206,7 @@ def installAlice(ctx: click.Context, force: bool):
 		},
 		{
 			'type'   : 'confirm',
-			'message': 'Do you want to install HLC? HLC can pilot leds such as the ones on respeakers to provide visual feedback.',
+			'message': 'Do you want to install HLC? HLC can pilot leds such as the ones on Respeakers to provide visual feedback.',
 			'name'   : 'installHLC',
 			'default': False
 		},
@@ -227,7 +227,7 @@ def installAlice(ctx: click.Context, force: bool):
 				'Deepspeech',
 				'Pocketsphinx'
 			],
-			'when'   : lambda answers: answers['advancedConfigs']
+			'when'   : lambda userAnswers: userAnswers['advancedConfigs']
 		},
 		{
 			'type'   : 'list',
@@ -240,66 +240,66 @@ def installAlice(ctx: click.Context, force: bool):
 				'Google',
 				'Watson'
 			],
-			'when'   : lambda answers: answers['advancedConfigs']
+			'when'   : lambda userAnswers: userAnswers['advancedConfigs']
 		},
 		{
 			'type'   : 'password',
 			'message': 'Enter your AWS access key',
 			'name'   : 'awsAccessKey',
-			'when'   : lambda answers: answers['advancedConfigs'] and answers['tts'] == 'Amazon'
+			'when'   : lambda userAnswers: userAnswers['advancedConfigs'] and userAnswers['tts'] == 'Amazon'
 		},
 		{
 			'type'   : 'password',
 			'message': 'Enter your AWS secret key',
 			'name'   : 'awsSecretKey',
-			'when'   : lambda answers: answers['advancedConfigs'] and answers['tts'] == 'Amazon'
+			'when'   : lambda userAnswers: userAnswers['advancedConfigs'] and userAnswers['tts'] == 'Amazon'
 		},
 		{
 			'type'   : 'input',
 			'message': 'Enter your Google service file path',
 			'name'   : 'googleServiceFile',
-			'when'   : lambda answers: answers['advancedConfigs'] and (answers['asr'] == 'Google' or answers['tts'] == 'Google')
+			'when'   : lambda userAnswers: userAnswers['advancedConfigs'] and (userAnswers['asr'] == 'Google' or userAnswers['tts'] == 'Google')
 		},
 		{
 			'type'   : 'confirm',
 			'message': 'Do you want Alice to use short replies?',
 			'name'   : 'shortReplies',
 			'default': False,
-			'when'   : lambda answers: answers['advancedConfigs']
+			'when'   : lambda userAnswers: userAnswers['advancedConfigs']
 		},
 		{
 			'type'   : 'confirm',
 			'message': 'Do you want to activate the developer mode?',
 			'name'   : 'devMode',
 			'default': False,
-			'when'   : lambda answers: answers['advancedConfigs']
+			'when'   : lambda userAnswers: userAnswers['advancedConfigs']
 		},
 		{
 			'type'   : 'input',
 			'message': 'Enter your Github username. This is used for skill development. If not needed, leave blank',
 			'name'   : 'githubUsername',
 			'default': '',
-			'when'   : lambda answers: answers['advancedConfigs']
+			'when'   : lambda userAnswers: userAnswers['advancedConfigs']
 		},
 		{
 			'type'   : 'password',
 			'message': 'Enter your Github access token. This is used for skill development',
 			'name'   : 'githubToken',
-			'when'   : lambda answers: answers['advancedConfigs'] and answers['githubUsername']
+			'when'   : lambda userAnswers: userAnswers['advancedConfigs'] and userAnswers['githubUsername']
 		},
 		{
 			'type'   : 'confirm',
 			'message': 'Enable telemetry data storing?',
 			'name'   : 'enableDataStoring',
 			'default': True,
-			'when'   : lambda answers: answers['advancedConfigs']
+			'when'   : lambda userAnswers: userAnswers['advancedConfigs']
 		},
 		{
 			'type'   : 'confirm',
 			'message': 'Enable skill auto update?',
 			'name'   : 'skillAutoUpdate',
 			'default': True,
-			'when'   : lambda answers: answers['advancedConfigs']
+			'when'   : lambda userAnswers: userAnswers['advancedConfigs']
 		}
 	]
 
@@ -419,7 +419,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 			'message': 'Balena-cli was not found on your system, do you want to install it?',
 			'name'   : 'installBalena',
 			'default': True,
-			'when'   : lambda answers: not flasherAvailable
+			'when'   : lambda _: not flasherAvailable
 		}
 	]
 
@@ -499,7 +499,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 			'name'   : 'image',
 			'message': 'Select the image you want to flash. Keep in mind we only officially support the "Buster" Debian distro!',
 			'choices': images,
-			'when'   : lambda answers: answers['doFlash']
+			'when'   : lambda _: answers['doFlash']
 		},
 		{
 			'type'   : 'list',
@@ -526,11 +526,13 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 		}
 	]
 
-	answers = prompt(questions=questions, answers=answers)
+	newAnswers = prompt(questions=questions)
 
-	if not answers:
+	if not newAnswers:
 		commons.returnToMainMenu(ctx)
 		return
+
+	answers = {**answers, **newAnswers}
 
 	# We need the value, not the full definition of the drive...
 	answers['drive'] = drives[answers['drive']]
@@ -576,9 +578,10 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 				'choices': drives
 			}
 		]
-		answers = prompt(questions=questions, answers=answers)
-		if not answers:
+		newAnswers = prompt(questions=questions)
+		if not newAnswers:
 			commons.returnToMainMenu(ctx, pause=True, message="I'm really sorry, but I just can't continue without this info, sorry for wasting your time...")
+		answers = {**answers, **newAnswers}
 	else:
 		answers['drive'] = drive
 
