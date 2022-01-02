@@ -18,9 +18,8 @@ jobs:
         with:
           python-version: 3.8
       - name: Install dependencies
-        uses: py-actions/py-dependency-install@v2
-        with:
-          path: requirements_test.txt
+        run: |
+          python3 setup.py install
       - name: Tests
         run: pytest AliceCli/tests/ --cov=AliceCli/ --cov-report=xml
       - name: Fix paths

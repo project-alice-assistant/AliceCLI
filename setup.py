@@ -25,7 +25,7 @@ from setuptools import find_packages, setup
 
 setup(
 	name='projectalice-cli',
-	version='0.1.8',
+	version='0.2.7',
 	long_description=Path('README.md').read_text(encoding='utf8'),
 	long_description_content_type='text/markdown',
 	python_requires='>=3.8',
@@ -38,15 +38,19 @@ setup(
 	author_email='laurentchervet@bluewin.ch',
 	description='Project Alice CLI tool',
 	install_requires=[
-        'Click',
-		'paramiko',
-		'PyInquirer',
-		'networkscan',
-		'pyyaml',
-		'requests',
-		'psutil',
-		'beautifulsoup4',
-		'tqdm'
+		'click~=8.0.3',
+		'paramiko~=2.8.1',
+		'PyInquirer~=1.0.3',
+		'networkscan~=1.0.9',
+		'pyyaml~=6.0',
+		'requests~=2.26.0',
+		'psutil~=5.8.0',
+		'beautifulsoup4~=4.10.0',
+		'tqdm~=4.62.3',
+		'pytest~=6.2.5',
+		'coverage~=6.2',
+		'pytest-cov~=3.0.0',
+		'coveralls~=3.3.1'
     ],
 	classifiers=[
 		"Development Status :: 4 - Beta",

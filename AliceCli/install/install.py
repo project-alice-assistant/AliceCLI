@@ -23,6 +23,7 @@ import psutil
 import requests
 import stat
 import subprocess
+import time
 import yaml
 import zipfile
 from PyInquirer import prompt
@@ -57,7 +58,7 @@ def installSoundDevice(ctx: click.Context, device: str):
 		sshCmd('git -C ~/seeed-voicecard/ checkout v5.9 && git -C ~/seeed-voicecard/ pull')
 		sshCmd('cd ~/seeed-voicecard/ && sudo ./install.sh')
 		ctx.invoke(reboot, return_to_main_menu=False)
-		commons.printSuccess('Device installed!')
+		commons.printSuccess('Sound device installed!')
 
 	commons.returnToMainMenu(ctx, pause=True)
 
@@ -80,7 +81,7 @@ def uninstallSoundDevice(ctx: click.Context, device: str, return_to_main_menu: b
 			sshCmd('cd ~/seeed-voicecard/ && sudo ./uninstall.sh')
 			sshCmd('sudo rm -rf ~/seeed-voicecard/')
 			ctx.invoke(reboot, return_to_main_menu=return_to_main_menu)
-			commons.printSuccess('Device uninstalled!')
+			commons.printSuccess('Sound device uninstalled!')
 
 	if return_to_main_menu:
 		commons.returnToMainMenu(ctx, pause=True)
@@ -334,7 +335,7 @@ def installAlice(ctx: click.Context, force: bool):
 			commons.printError(f'Failed reading projectalice.yaml {e}')
 			commons.returnToMainMenu(ctx, pause=True)
 
-	confs['adminPinCode'] = int(answers['adminPinCode'])
+	confs['adminPinCode'] = str(int(answers['adminPinCode'])).zfill(4)
 	confs['mqttHost'] = answers['mqttHost']
 	confs['mqttPort'] = int(answers['mqttPort'])
 	confs['activeLanguage'] = answers['activeLanguage']
@@ -362,7 +363,7 @@ def installAlice(ctx: click.Context, force: bool):
 	confs['enableDataStoring'] = answers.get('enableDataStoring', True)
 	confs['skillAutoUpdate'] = answers.get('skillAutoUpdate', True)
 
-	if Path(answers.get('googleServiceFile', '')).exists():
+	if 'googleServiceFile' in answers and Path(answers.get('googleServiceFile')).exists():
 		confs['googleServiceFile'] = Path(answers['googleServiceFile']).read_text()
 
 	if answers['advancedConfigs']:
@@ -421,7 +422,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 			'message': 'Balena-cli was not found on your system, do you want to install it?',
 			'name'   : 'installBalena',
 			'default': True,
-			'when'   : lambda flasherAvailable: not flasherAvailable
+			'when'   : lambda answers: not flasherAvailable
 		}
 	]
 
@@ -485,27 +486,30 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 
 	images = list()
 	if answers['doFlash']:
-		directories = list()
 		commons.printInfo('Checking for Raspberry PI OS images, please wait....')
 		# Potential local files
 		downloadsPath = Path.home() / 'Downloads'
 		for file in downloadsPath.glob('*raspi*.zip'):
 			images.append(str(file))
 
-		# Get a list of available images online
-		url = 'https://downloads.raspberrypi.org/raspios_lite_armhf/images/'
-		page = requests.get(url)
-		if page.status_code == 200:
-			soup = BeautifulSoup(page.text, features='html.parser')
-			directories = [url + node.get('href') for node in soup.find_all('a') if node.get('href').endswith('/')]
-			if directories:
-				directories.pop(0)  # This is the return link, remove it...
+		images.append('https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2021-05-28/2021-05-07-raspios-buster-armhf-lite.zip')
 
-		for directory in directories:
-			page = requests.get(directory)
-			if page.status_code == 200:
-				soup = BeautifulSoup(page.text, features='html.parser')
-				images.extend([directory + node.get('href') for node in soup.find_all('a') if node.get('href').endswith('.zip')])
+		# Deactivated for now, we enforce Buster only!
+		# directories = list()
+		# Get a list of available images online
+		# url = 'https://downloads.raspberrypi.org/raspios_lite_armhf/images/'
+		# page = requests.get(url)
+		# if page.status_code == 200:
+		# 	soup = BeautifulSoup(page.text, features='html.parser')
+		# 	directories = [url + node.get('href') for node in soup.find_all('a') if node.get('href').endswith('/')]
+		# 	if directories:
+		# 		directories.pop(0)  # This is the return link, remove it...
+		#
+		# for directory in directories:
+		# 	page = requests.get(directory)
+		# 	if page.status_code == 200:
+		# 		soup = BeautifulSoup(page.text, features='html.parser')
+		# 		images.extend([directory + node.get('href') for node in soup.find_all('a') if node.get('href').endswith('.zip')])
 
 	drives = dict()
 	output = subprocess.run(f'balena util available-drives'.split(), capture_output=True, shell=True).stdout.decode()
@@ -522,7 +526,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 		{
 			'type'   : 'list',
 			'name'   : 'image',
-			'message': 'Select the image you want to flash',
+			'message': 'Select the image you want to flash. Keep in mind we only officially support the "Buster" Debian distro!',
 			'choices': images,
 			'when'   : lambda answers: answers['doFlash']
 		},
@@ -570,20 +574,26 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 
 		if operatingSystem == 'windows' or operatingSystem == 'linux':
 			subprocess.run(f'balena local flash {str(file)} --drive {answers["drive"]} --yes'.split(), shell=True)
+			time.sleep(5)
 		else:
 			commons.returnToMainMenu(ctx, pause=True, message='Flashing only supported on Windows and Linux systems for now. If you have the knowledge to implement it on other systems, feel free to pull request!')
 			return
 
-	drive = ''
 	drives = list()
-	i = 0
-	for dp in psutil.disk_partitions():
-		i += 1
-		if 'rw,removable' not in dp.opts.lower():
-			continue
-		drives.append(dp.device)
-		if i == int(answers['drive'][-1]):
-			drive = dp.device
+	drive = ''
+	while not drives:
+		i = 0
+		for dp in psutil.disk_partitions():
+			i += 1
+			if 'rw,removable' not in dp.opts.lower():
+				continue
+			drives.append(dp.device)
+			if i == int(answers['drive'][-1]):
+				drive = dp.device
+
+		if not drives:
+			commons.printError('For some reason I cannot find the SD boot partition. Please unplug, replug your SD back and press any key to continue')
+			click.pause()
 
 	if not drive:
 		commons.printError('Something went weird flashing/writing on your SD card, sorry, I cannot find the SD card device anymore...')

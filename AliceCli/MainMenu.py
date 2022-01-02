@@ -17,21 +17,56 @@
 #
 #  Last modified: 2021.03.07 at 10:56:35 CET
 #  Last modified by: Psycho
+import re
+import subprocess
+import sys
 
 import click
-import sys
 from PyInquirer import Separator, prompt
 
-from AliceCli.alice.alice import systemctl, updateAlice
+from AliceCli.Version import Version
+from AliceCli.alice.alice import reportBug, systemctl, updateAlice
 from AliceCli.install.install import installAlice, installSoundDevice, prepareSdCard, uninstallSoundDevice
 from AliceCli.utils.commons import connect, discover
 from AliceCli.utils.utils import aliceLogs, changeHostname, changePassword, reboot, soundTest, systemLogs, updateSystem, upgradeSystem
 
 
+VERSION = ''
+CHECKED = False
+
 @click.command(name='main_menu')
 @click.pass_context
 def mainMenu(ctx: click.Context):
+	global CHECKED, VERSION
+
 	click.clear()
+
+	if not CHECKED:
+		result = subprocess.run('pip index versions projectalice-cli'.split(), capture_output=True, text=True)
+		if 'error' not in result.stderr.lower():
+			regex = re.compile(r"INSTALLED:.*(?P<installed>[\d]+\.[\d]+\.[\d]+)\n.*LATEST:.*(?P<latest>[\d]+\.[\d]+\.[\d]+)")
+			match = regex.search(result.stdout.strip())
+
+			if not match:
+				click.secho(message='Failed checking CLI version\n', fg='red')
+			else:
+				installed = Version.fromString(match.group('installed'))
+				latest = Version.fromString(match.group('latest'))
+
+				if installed < latest:
+					click.secho(f'Project Alice CLI version {str(installed)}\n', fg='red')
+					click.secho(message=f'CLI version {str(latest)} is available, you should consider updating using `pip install projectalice-cli --upgrade`\n', fg='red')
+				else:
+					click.secho(f'Project Alice CLI version {str(installed)}\n', fg='green')
+
+				VERSION = str(installed)
+		else:
+			click.secho(message='Failed checking CLI version\n', fg='red')
+
+		CHECKED = True
+	else:
+		click.echo(f'Project Alice CLI version {VERSION}\n')
+
 	answers = prompt(
 		questions=[
 			{
@@ -60,6 +95,7 @@ def mainMenu(ctx: click.Context):
 					'Upgrade system',
 					'Reboot device',
 					'Uninstall your sound device',
+					'Enable bug report for next session',
 					'Check Alice logs',
 					'Check system logs',
 					'Exit'
@@ -113,5 +149,7 @@ def mainMenu(ctx: click.Context):
 		ctx.invoke(aliceLogs)
 	elif answers['mainMenu'] == 'Check system logs':
 		ctx.invoke(systemLogs)
+	elif answers['mainMenu'] == 'Enable bug report for next session':
+		ctx.invoke(reportBug)
 	else:
 		ctx.invoke(mainMenu)
