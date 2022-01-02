@@ -349,7 +349,7 @@ def installAlice(ctx: click.Context, force: bool):
 	else:
 		confs['installSound'] = True
 
-	confs['asr'] = answers.get('asr', 'pocketsphinx').lower()
+	confs['asr'] = answers.get('asr', 'coqui').lower()
 	confs['awsAccessKey'] = answers.get('awsAccessKey', '')
 	confs['awsSecretKey'] = answers.get('awsSecretKey', '')
 	confs['tts'] = answers.get('tts', 'pico').lower()
