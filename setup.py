@@ -25,7 +25,7 @@ from setuptools import find_packages, setup
 
 setup(
 	name='projectalice-cli',
-	version='0.2.9',
+	version='1.0.0',
 	long_description=Path('README.md').read_text(encoding='utf8'),
 	long_description_content_type='text/markdown',
 	python_requires='>=3.8',
@@ -53,7 +53,7 @@ setup(
 		'coveralls~=3.3.1'
     ],
 	classifiers=[
-		"Development Status :: 4 - Beta",
+		"Development Status :: 5 - Production/Stable",
 		"Environment :: Console",
 		"Intended Audience :: End Users/Desktop",
 		"License :: OSI Approved :: GNU General Public License v3 (GPLv3)",

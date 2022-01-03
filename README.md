@@ -13,7 +13,7 @@ It is not meant to be installed on the device that runs/will run Alice, but on y
 
 It handles connecting to network discoverable devices through SSH and generates RSA keys for a passwordless connection.
 
-Although it's a command line tool, made possible thanks to the awesome "Click" package, it is using the wonderful "PyInquirer" package to offer an interactive menu for people not used or wanting to type commands.
+Although it's a command line tool, made possible thanks to the awesome "Click" package, it is using the wonderful "InquirerPy" package, a reboot of the deprecated "PyInquirer", to offer an interactive menu for people not used or wanting to type commands.
 
 # Users
 Install this tool via pip, on your main computer:
@@ -27,9 +27,9 @@ Note that you need Python 3.8 at least
 - Clone this repository
 - Open a terminal on whatever OS you are
 - CD to the path where you cloned this repository
-- Create a python 3.8+ virtual environement:
+- Create a python 3.8+ virtual environment:
   `python -m venv`
-- Activate your virtual environement
+- Activate your virtual environment
 - Install the package in dev mode:
   `pip install --editable .`
   

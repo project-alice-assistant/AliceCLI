@@ -16,18 +16,18 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>
 #
 #  Last modified: 2021.07.31 at 15:54:28 CEST
+import os
 import platform
 import subprocess
 import time
+import zipfile
 from pathlib import Path
 from shutil import which
 
 import click
-import os
 import psutil
 import requests
 import yaml
-import zipfile
 from InquirerPy import prompt
 from tqdm import tqdm
 
@@ -405,10 +405,11 @@ def installAlice(ctx: click.Context, force: bool):
 @click.pass_context
 def prepareSdCard(ctx: click.Context):  # NOSONAR
 	operatingSystem = platform.system().lower()
+
 	balenaExecutablePath = which('balena')
-	if balenaExecutablePath is None:
-		if operatingSystem == 'linux':
-			balenaExecutablePath = str(Path.joinpath(Path.cwd(), 'balena-cli', 'balena'))  # default install path
+	if balenaExecutablePath is None and operatingSystem == 'linux':
+		balenaExecutablePath = str(Path.joinpath(Path.cwd(), 'balena-cli', 'balena'))  # default install path
+
 	flasherAvailable = Path(balenaExecutablePath).exists()
 	downloadsPath = Path.home() / 'Downloads'
 
@@ -464,7 +465,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 			exit(0)
 		elif operatingSystem == 'linux':
 			executablePath = Path(balenaExecutablePath)
-			commons.printInfo(f"install dir: {executablePath.parent}")
+			commons.printInfo(f"Install dir: {executablePath.parent}")
 			commons.printInfo(f'Extracting {destination} to {executablePath.name}...')
 			archive = zipfile.ZipFile(destination)
 			archive.extractall()  # extract to ./balena-cli/ i.e. sub dir of working directory.
@@ -474,8 +475,8 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 			executablePath.chmod(509)  # now shell `./balena-cli/balena version` works
 			commons.printInfo('Adding ./balena-cli to PATH...')
 			os.environ['PATH'] += os.pathsep + str(executablePath.parent)
-			sysPath = os.environ["PATH"]
-			commons.printInfo(f"new PATH: {sysPath}")
+			sysPath = os.environ['PATH']
+			commons.printInfo(f'New PATH: {sysPath}')
 			click.pause('Installation Done. Press a key')
 		else:
 			click.pause('I have no idea how to install stuff on Mac, so I have downloaded the tool for you, please install it. Oh, and contact Psycho to let him know how to install a pkg file on Mac ;-)')
@@ -512,11 +513,11 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 	drives = dict()
 	if operatingSystem == 'linux':
 		balenaCommand = f'{balenaExecutablePath} util available-drives'
-		driveSep = Path(balenaExecutablePath)._flavour.sep  # typically '/'
+		driveSep = os.path.sep  # typically '/'
 	else:
-		balenaCommand = 'balena util available-drives'.split()
+		balenaCommand = 'balena util available-drives'
 		driveSep = '\\'
-	output = subprocess.run(balenaCommand, capture_output=True, shell=True).stdout.decode()
+	output = subprocess.run(balenaCommand.split(), capture_output=True, shell=True).stdout.decode()
 	for line in output.split('\n'):
 		if not line.startswith(driveSep):
 			continue
@@ -593,34 +594,38 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 	drives = list()
 	drive = ''
 	if operatingSystem == 'linux':
-		# typically boot partition is the first increment of SD device
+		# typically, boot partition is the first increment of SD device
 		# e.g. on /dev/sda drive /dev/sda1 is "boot" and /dev/sda2 is "rootfs"
-		# Lookup up the boot mountpoint path via lsblk
+		# Lookup up the boot mount point path via lsblk
+
 		lsblkCommand = f'sudo lsblk --noheadings --list {answers["drive"]}'
 		output = subprocess.run(lsblkCommand, capture_output=True, shell=True).stdout.decode()
 		for line in output.split('\n'):
-			mountpoint = line.split(' ')[-1]
-			if not mountpoint.startswith(driveSep):
+			mountPoint = line.split(' ')[-1]
+			if not mountPoint.startswith(driveSep):
 				continue
-			drive = mountpoint
+			drive = mountPoint
 			break  # just take the first one
 		if not drive or not Path(drive).exists():
-			commons.printError(f'For some reason I cannot find the SD boot partition mountpoint {drive}.')
+			commons.printError(f'For some reason I cannot find the SD boot partition mount point {drive}.')
 			commons.returnToMainMenu(ctx, pause=True, message="I'm really sorry, but I just can't continue without this info, sorry for wasting your time...")
 	else:
 		while not drives:
 			i = 0
-		for dp in psutil.disk_partitions():
-			i += 1
-			if 'rw,removable' not in dp.opts.lower():
-				continue
-			drives.append(dp.device)
-			if i == int(answers['drive'][-1]):
-				drive = dp.device
+			for dp in psutil.disk_partitions():
+				i += 1
+				if 'rw,removable' not in dp.opts.lower():
+					continue
+				drives.append(dp.device)
+				if i == int(answers['drive'][-1]):
+					drive = dp.device
 
 			if not drives:
-				commons.printError('For some reason I cannot find the SD boot partition. Please eject then unplug, replug your SD back and press any key to continue')
-				click.pause()
+				if i < 5:
+					commons.printError('For some reason I cannot find the SD boot partition. Please eject then unplug, replug your SD back and press any key to continue')
+					click.pause()
+				else:
+					break
 
 	if not drive:
 		commons.printError('Something went weird flashing/writing on your SD card, sorry, I cannot find the SD card device anymore...')
@@ -639,7 +644,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 	else:
 		answers['drive'] = drive
 
-	# Now lets enable SSH and WiFi on boot.
+	# Now let's enable SSH and Wi-Fi on boot.
 	commons.printInfo('Adding ssh & wifi to SD boot....')
 	Path(answers['drive'], 'ssh').touch()
 
