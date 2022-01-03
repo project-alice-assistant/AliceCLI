@@ -17,20 +17,21 @@
 #
 #  Last modified: 2021.03.07 at 13:31:43 CET
 #  Last modified by: Psycho
-import click
 import json
-import paramiko
 import re
-import requests
 import socket
 import sys
 import time
 import uuid
-from PyInquirer import prompt
-from networkscan import networkscan
 from pathlib import Path
 from threading import Event, Thread
 from typing import Optional, Tuple
+
+import click
+import paramiko
+import requests
+from InquirerPy import prompt
+from networkscan import networkscan
 
 from AliceCli.Version import Version
 
@@ -358,6 +359,7 @@ def sshCmdWithReturn(cmd: str) -> Tuple:
 	return stdout, stderr
 
 
+# noinspection DuplicatedCode
 def getUpdateSource(definedSource: str) -> str:
 	updateSource = 'master'
 	if definedSource in {'master', 'release'}:

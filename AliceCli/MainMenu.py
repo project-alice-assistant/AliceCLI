@@ -22,7 +22,8 @@ import subprocess
 import sys
 
 import click
-from PyInquirer import Separator, prompt
+from InquirerPy import prompt
+from InquirerPy.separator import Separator
 
 from AliceCli.Version import Version
 from AliceCli.alice.alice import reportBug, systemctl, updateAlice
@@ -33,6 +34,7 @@ from AliceCli.utils.utils import aliceLogs, changeHostname, changePassword, rebo
 
 VERSION = ''
 CHECKED = False
+
 
 @click.command(name='main_menu')
 @click.pass_context

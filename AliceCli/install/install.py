@@ -16,20 +16,19 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>
 #
 #  Last modified: 2021.07.31 at 15:54:28 CEST
-import click
-import os
 import platform
-import psutil
-import requests
-import stat
 import subprocess
 import time
-import yaml
-import zipfile
-from PyInquirer import prompt
-from bs4 import BeautifulSoup
 from pathlib import Path
 from shutil import which
+
+import click
+import os
+import psutil
+import requests
+import yaml
+import zipfile
+from InquirerPy import prompt
 from tqdm import tqdm
 
 from AliceCli.utils import commons
@@ -209,7 +208,7 @@ def installAlice(ctx: click.Context, force: bool):
 		},
 		{
 			'type'   : 'confirm',
-			'message': 'Do you want to install HLC? HLC can pilot leds such as the ones on respeakers to provide visual feedback.',
+			'message': 'Do you want to install HLC? HLC can pilot leds such as the ones on Respeakers to provide visual feedback.',
 			'name'   : 'installHLC',
 			'default': False
 		},
@@ -230,7 +229,7 @@ def installAlice(ctx: click.Context, force: bool):
 				'Deepspeech',
 				'Pocketsphinx'
 			],
-			'when'   : lambda answers: answers['advancedConfigs']
+			'when'   : lambda userAnswers: userAnswers['advancedConfigs']
 		},
 		{
 			'type'   : 'list',
@@ -243,66 +242,66 @@ def installAlice(ctx: click.Context, force: bool):
 				'Google',
 				'Watson'
 			],
-			'when'   : lambda answers: answers['advancedConfigs']
+			'when'   : lambda userAnswers: userAnswers['advancedConfigs']
 		},
 		{
 			'type'   : 'password',
 			'message': 'Enter your AWS access key',
 			'name'   : 'awsAccessKey',
-			'when'   : lambda answers: answers['advancedConfigs'] and answers['tts'] == 'Amazon'
+			'when'   : lambda userAnswers: userAnswers['advancedConfigs'] and userAnswers['tts'] == 'Amazon'
 		},
 		{
 			'type'   : 'password',
 			'message': 'Enter your AWS secret key',
 			'name'   : 'awsSecretKey',
-			'when'   : lambda answers: answers['advancedConfigs'] and answers['tts'] == 'Amazon'
+			'when'   : lambda userAnswers: userAnswers['advancedConfigs'] and userAnswers['tts'] == 'Amazon'
 		},
 		{
 			'type'   : 'input',
 			'message': 'Enter your Google service file path',
 			'name'   : 'googleServiceFile',
-			'when'   : lambda answers: answers['advancedConfigs'] and (answers['asr'] == 'Google' or answers['tts'] == 'Google')
+			'when'   : lambda userAnswers: userAnswers['advancedConfigs'] and (userAnswers['asr'] == 'Google' or userAnswers['tts'] == 'Google')
 		},
 		{
 			'type'   : 'confirm',
 			'message': 'Do you want Alice to use short replies?',
 			'name'   : 'shortReplies',
 			'default': False,
-			'when'   : lambda answers: answers['advancedConfigs']
+			'when'   : lambda userAnswers: userAnswers['advancedConfigs']
 		},
 		{
 			'type'   : 'confirm',
 			'message': 'Do you want to activate the developer mode?',
 			'name'   : 'devMode',
 			'default': False,
-			'when'   : lambda answers: answers['advancedConfigs']
+			'when'   : lambda userAnswers: userAnswers['advancedConfigs']
 		},
 		{
 			'type'   : 'input',
 			'message': 'Enter your Github username. This is used for skill development. If not needed, leave blank',
 			'name'   : 'githubUsername',
 			'default': '',
-			'when'   : lambda answers: answers['advancedConfigs']
+			'when'   : lambda userAnswers: userAnswers['advancedConfigs']
 		},
 		{
 			'type'   : 'password',
 			'message': 'Enter your Github access token. This is used for skill development',
 			'name'   : 'githubToken',
-			'when'   : lambda answers: answers['advancedConfigs'] and answers['githubUsername']
+			'when'   : lambda userAnswers: userAnswers['advancedConfigs'] and userAnswers['githubUsername']
 		},
 		{
 			'type'   : 'confirm',
 			'message': 'Enable telemetry data storing?',
 			'name'   : 'enableDataStoring',
 			'default': True,
-			'when'   : lambda answers: answers['advancedConfigs']
+			'when'   : lambda userAnswers: userAnswers['advancedConfigs']
 		},
 		{
 			'type'   : 'confirm',
 			'message': 'Enable skill auto update?',
 			'name'   : 'skillAutoUpdate',
 			'default': True,
-			'when'   : lambda answers: answers['advancedConfigs']
+			'when'   : lambda userAnswers: userAnswers['advancedConfigs']
 		}
 	]
 
@@ -352,7 +351,7 @@ def installAlice(ctx: click.Context, force: bool):
 	else:
 		confs['installSound'] = True
 
-	confs['asr'] = answers.get('asr', 'pocketsphinx').lower()
+	confs['asr'] = answers.get('asr', 'coqui').lower()
 	confs['awsAccessKey'] = answers.get('awsAccessKey', '')
 	confs['awsSecretKey'] = answers.get('awsSecretKey', '')
 	confs['tts'] = answers.get('tts', 'pico').lower()
@@ -409,7 +408,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 	balenaExecutablePath = which('balena')
 	if balenaExecutablePath is None:
 		if operatingSystem == 'linux':
-			balenaExecutablePath = Path.joinpath(Path.cwd(), 'balena-cli', 'balena').__str__()  # default install path
+			balenaExecutablePath = str(Path.joinpath(Path.cwd(), 'balena-cli', 'balena'))  # default install path
 	flasherAvailable = Path(balenaExecutablePath).exists()
 	downloadsPath = Path.home() / 'Downloads'
 
@@ -423,10 +422,10 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 		},
 		{
 			'type'   : 'confirm',
-			'message': 'Balena-cli was not found on your system, do you want to install it?',
+			'message': 'balena-cli was not found on your system. It is required for flashing SD cards, do you want to install it?',
 			'name'   : 'installBalena',
 			'default': True,
-			'when'   : lambda answers: not flasherAvailable
+			'when'   : lambda _: not flasherAvailable
 		}
 	]
 
@@ -442,7 +441,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 		return
 	elif answers['doFlash'] and not flasherAvailable and answers['installBalena']:
 		commons.printInfo('Installing Balena-cli, please wait...')
-		balenaVersion = 'v12.51.1'
+		balenaVersion = 'v13.1.1'
 		if operatingSystem == 'windows':
 			url = f'https://github.com/balena-io/balena-cli/releases/download/{balenaVersion}/balena-cli-{balenaVersion}-windows-x64-installer.exe'
 		elif operatingSystem == 'linux':
@@ -474,11 +473,10 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 			# from https://stackoverflow.com/questions/12791997/how-do-you-do-a-simple-chmod-x-from-within-python
 			executablePath.chmod(509)  # now shell `./balena-cli/balena version` works
 			commons.printInfo('Adding ./balena-cli to PATH...')
-			os.environ['PATH'] += os.pathsep + executablePath.parent.__str__()
+			os.environ['PATH'] += os.pathsep + str(executablePath.parent)
 			sysPath = os.environ["PATH"]
 			commons.printInfo(f"new PATH: {sysPath}")
-			click.pause('Done. Press a key')
-			commons.returnToMainMenu(ctx)
+			click.pause('Installation Done. Press a key')
 		else:
 			click.pause('I have no idea how to install stuff on Mac, so I have downloaded the tool for you, please install it. Oh, and contact Psycho to let him know how to install a pkg file on Mac ;-)')
 			exit(0)
@@ -534,7 +532,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 			'name'   : 'image',
 			'message': 'Select the image you want to flash. Keep in mind we only officially support the "Buster" Debian distro!',
 			'choices': images,
-			'when'   : lambda answers: answers['doFlash']
+			'when'   : lambda _: answers['doFlash']
 		},
 		{
 			'type'   : 'list',
@@ -561,11 +559,13 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 		}
 	]
 
-	answers = prompt(questions=questions, answers=answers)
+	newAnswers = prompt(questions=questions)
 
-	if not answers:
+	if not newAnswers:
 		commons.returnToMainMenu(ctx)
 		return
+
+	answers = {**answers, **newAnswers}
 
 	# We need the value, not the full definition of the drive...
 	answers['drive'] = drives[answers['drive']]
@@ -604,7 +604,6 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 				continue
 			drive = mountpoint
 			break  # just take the first one
-		commons.printInfo(f'mountpoint: {mountpoint} output: {output}')
 		if not drive or not Path(drive).exists():
 			commons.printError(f'For some reason I cannot find the SD boot partition mountpoint {drive}.')
 			commons.returnToMainMenu(ctx, pause=True, message="I'm really sorry, but I just can't continue without this info, sorry for wasting your time...")
@@ -612,12 +611,12 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 		while not drives:
 			i = 0
 		for dp in psutil.disk_partitions():
-				i += 1
-				if 'rw,removable' not in dp.opts.lower():
-					continue
-				drives.append(dp.device)
-				if i == int(answers['drive'][-1]):
-					drive = dp.device
+			i += 1
+			if 'rw,removable' not in dp.opts.lower():
+				continue
+			drives.append(dp.device)
+			if i == int(answers['drive'][-1]):
+				drive = dp.device
 
 			if not drives:
 				commons.printError('For some reason I cannot find the SD boot partition. Please eject then unplug, replug your SD back and press any key to continue')
@@ -633,14 +632,15 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 				'choices': drives
 			}
 		]
-		answers = prompt(questions=questions, answers=answers)
-		if not answers:
+		newAnswers = prompt(questions=questions)
+		if not newAnswers:
 			commons.returnToMainMenu(ctx, pause=True, message="I'm really sorry, but I just can't continue without this info, sorry for wasting your time...")
+		answers = {**answers, **newAnswers}
 	else:
 		answers['drive'] = drive
 
 	# Now lets enable SSH and WiFi on boot.
-
+	commons.printInfo('Adding ssh & wifi to SD boot....')
 	Path(answers['drive'], 'ssh').touch()
 
 	content = f'country={answers["country"]}\n'
@@ -654,7 +654,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 	content += '}'
 	Path(answers['drive'], 'wpa_supplicant.conf').write_text(content)
 
-	commons.returnToMainMenu(ctx, pause=True, message='SD card ready, please plug it in your device and boot it!')
+	commons.returnToMainMenu(ctx, pause=True, message='SD card is ready. Please plug it in your device and boot it!')
 
 
 def doDownload(url: str, destination: Path):
