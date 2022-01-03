@@ -23,9 +23,11 @@ from pathlib import Path
 from shutil import which
 
 import click
+import os
 import psutil
 import requests
 import yaml
+import zipfile
 from InquirerPy import prompt
 from tqdm import tqdm
 
@@ -402,10 +404,14 @@ def installAlice(ctx: click.Context, force: bool):
 @click.command(name='prepareSdCard')
 @click.pass_context
 def prepareSdCard(ctx: click.Context):  # NOSONAR
-
-	flasherAvailable = which('balena') is not None
-	downloadsPath = Path.home() / 'Downloads'
 	operatingSystem = platform.system().lower()
+	balenaExecutablePath = which('balena')
+	if balenaExecutablePath is None:
+		if operatingSystem == 'linux':
+			balenaExecutablePath = str(Path.joinpath(Path.cwd(), 'balena-cli', 'balena'))  # default install path
+	flasherAvailable = Path(balenaExecutablePath).exists()
+	downloadsPath = Path.home() / 'Downloads'
+
 
 	questions = [
 		{
@@ -416,7 +422,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 		},
 		{
 			'type'   : 'confirm',
-			'message': 'Balena-cli was not found on your system, do you want to install it?',
+			'message': 'balena-cli was not found on your system. It is required for flashing SD cards, do you want to install it?',
 			'name'   : 'installBalena',
 			'default': True,
 			'when'   : lambda _: not flasherAvailable
@@ -424,7 +430,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 	]
 
 	answers = prompt(questions)
-	answers.setdefault('installBalena', False)
+	answers.setdefault('installBalena', True)
 
 	if not answers or 'doFlash' not in answers:
 		commons.returnToMainMenu(ctx)
@@ -435,22 +441,42 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 		return
 	elif answers['doFlash'] and not flasherAvailable and answers['installBalena']:
 		commons.printInfo('Installing Balena-cli, please wait...')
-
+		balenaVersion = 'v13.1.1'
 		if operatingSystem == 'windows':
-			url = 'https://github.com/balena-io/balena-cli/releases/download/v12.44.9/balena-cli-v12.44.9-windows-x64-installer.exe'
+			url = f'https://github.com/balena-io/balena-cli/releases/download/{balenaVersion}/balena-cli-{balenaVersion}-windows-x64-installer.exe'
 		elif operatingSystem == 'linux':
-			url = 'https://github.com/balena-io/balena-cli/releases/download/v12.44.9/balena-cli-v12.44.9-linux-x64-standalone.zip'
+			url = f'https://github.com/balena-io/balena-cli/releases/download/{balenaVersion}/balena-cli-{balenaVersion}-linux-x64-standalone.zip'
 		else:
-			url = 'https://github.com/balena-io/balena-cli/releases/download/v12.44.9/balena-cli-v12.44.9-macOS-x64-installer.pkg'
+			url = f'https://github.com/balena-io/balena-cli/releases/download/{balenaVersion}/balena-cli-{balenaVersion}-macOS-x64-installer.pkg'
 
 		destination = downloadsPath / url.split('/')[-1]
-		doDownload(url=url, destination=destination)
+
+		if destination.exists():
+			commons.printInfo(f'Skipping download, using existing: {destination}')
+		else:
+			commons.printInfo("Downloading...")
+			doDownload(url=url, destination=destination)
 
 		if operatingSystem == 'windows':
-			commons.printInfo("Downloaded! I'm starting the installation, please follow the instructions and come back when it's done!")
+			commons.printInfo("Starting the installation, please follow the instructions and come back when it's done!")
 			subprocess.Popen(str(destination).split(), shell=True)
 			click.pause('Press a key when the installation process is done! Please close your terminal and restart it to continue the flashing process')
 			exit(0)
+		elif operatingSystem == 'linux':
+			executablePath = Path(balenaExecutablePath)
+			commons.printInfo(f"install dir: {executablePath.parent}")
+			commons.printInfo(f'Extracting {destination} to {executablePath.name}...')
+			archive = zipfile.ZipFile(destination)
+			archive.extractall()  # extract to ./balena-cli/ i.e. sub dir of working directory.
+			commons.printInfo('Setting ./balena-cli/belena as executable...')
+			# set executable permission
+			# from https://stackoverflow.com/questions/12791997/how-do-you-do-a-simple-chmod-x-from-within-python
+			executablePath.chmod(509)  # now shell `./balena-cli/balena version` works
+			commons.printInfo('Adding ./balena-cli to PATH...')
+			os.environ['PATH'] += os.pathsep + str(executablePath.parent)
+			sysPath = os.environ["PATH"]
+			commons.printInfo(f"new PATH: {sysPath}")
+			click.pause('Installation Done. Press a key')
 		else:
 			click.pause('I have no idea how to install stuff on Mac, so I have downloaded the tool for you, please install it. Oh, and contact Psycho to let him know how to install a pkg file on Mac ;-)')
 			exit(0)
@@ -482,10 +508,17 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 		# 		soup = BeautifulSoup(page.text, features='html.parser')
 		# 		images.extend([directory + node.get('href') for node in soup.find_all('a') if node.get('href').endswith('.zip')])
 
+	commons.printInfo('Checking for available SD card drives, please wait....')
 	drives = dict()
-	output = subprocess.run(f'balena util available-drives'.split(), capture_output=True, shell=True).stdout.decode()
+	if operatingSystem == 'linux':
+		balenaCommand = f'{balenaExecutablePath} util available-drives'
+		driveSep = Path(balenaExecutablePath)._flavour.sep  # typically '/'
+	else:
+		balenaCommand = 'balena util available-drives'.split()
+		driveSep = '\\'
+	output = subprocess.run(balenaCommand, capture_output=True, shell=True).stdout.decode()
 	for line in output.split('\n'):
-		if not line.startswith('\\'):
+		if not line.startswith(driveSep):
 			continue
 		drives[line] = line.split(' ')[0]
 
@@ -544,18 +577,39 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 			doDownload(url=answers['image'], destination=file)
 		else:
 			file = answers['image']
-
 		if operatingSystem == 'windows' or operatingSystem == 'linux':
-			subprocess.run(f'balena local flash {str(file)} --drive {answers["drive"]} --yes'.split(), shell=True)
+			if operatingSystem == 'linux':
+				# this only works on distros with "sudo" support.
+				balenaCommand = f'sudo {balenaExecutablePath} local flash {str(file)} --drive {answers["drive"]} --yes'
+			else:
+				balenaCommand = f'balena local flash {str(file)} --drive {answers["drive"]} --yes'.split()
+			subprocess.run(balenaCommand, shell=True)
 			time.sleep(5)
 		else:
 			commons.returnToMainMenu(ctx, pause=True, message='Flashing only supported on Windows and Linux systems for now. If you have the knowledge to implement it on other systems, feel free to pull request!')
 			return
+	click.pause("Flashing complete. Please eject, unplug and replug your SD back, then press any key to continue...")
 
 	drives = list()
 	drive = ''
-	while not drives:
-		i = 0
+	if operatingSystem == 'linux':
+		# typically boot partition is the first increment of SD device
+		# e.g. on /dev/sda drive /dev/sda1 is "boot" and /dev/sda2 is "rootfs"
+		# Lookup up the boot mountpoint path via lsblk
+		lsblkCommand = f'sudo lsblk --noheadings --list {answers["drive"]}'
+		output = subprocess.run(lsblkCommand, capture_output=True, shell=True).stdout.decode()
+		for line in output.split('\n'):
+			mountpoint = line.split(' ')[-1]
+			if not mountpoint.startswith(driveSep):
+				continue
+			drive = mountpoint
+			break  # just take the first one
+		if not drive or not Path(drive).exists():
+			commons.printError(f'For some reason I cannot find the SD boot partition mountpoint {drive}.')
+			commons.returnToMainMenu(ctx, pause=True, message="I'm really sorry, but I just can't continue without this info, sorry for wasting your time...")
+	else:
+		while not drives:
+			i = 0
 		for dp in psutil.disk_partitions():
 			i += 1
 			if 'rw,removable' not in dp.opts.lower():
@@ -564,9 +618,9 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 			if i == int(answers['drive'][-1]):
 				drive = dp.device
 
-		if not drives:
-			commons.printError('For some reason I cannot find the SD boot partition. Please unplug, replug your SD back and press any key to continue')
-			click.pause()
+			if not drives:
+				commons.printError('For some reason I cannot find the SD boot partition. Please eject then unplug, replug your SD back and press any key to continue')
+				click.pause()
 
 	if not drive:
 		commons.printError('Something went weird flashing/writing on your SD card, sorry, I cannot find the SD card device anymore...')
@@ -585,6 +639,8 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 	else:
 		answers['drive'] = drive
 
+	# Now lets enable SSH and WiFi on boot.
+	commons.printInfo('Adding ssh & wifi to SD boot....')
 	Path(answers['drive'], 'ssh').touch()
 
 	content = f'country={answers["country"]}\n'
@@ -598,7 +654,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 	content += '}'
 	Path(answers['drive'], 'wpa_supplicant.conf').write_text(content)
 
-	commons.returnToMainMenu(ctx, pause=True, message='SD card ready, please plug it in your device and boot it!')
+	commons.returnToMainMenu(ctx, pause=True, message='SD card is ready. Please plug it in your device and boot it!')
 
 
 def doDownload(url: str, destination: Path):
