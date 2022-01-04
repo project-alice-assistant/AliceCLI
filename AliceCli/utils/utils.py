@@ -21,7 +21,7 @@
 import time
 
 import click
-from InquirerPy import inquirer, prompt
+from InquirerPy import inquirer
 from InquirerPy.validator import PasswordValidator
 
 from AliceCli.utils import commons
@@ -37,46 +37,32 @@ def changePassword(ctx: click.Context, current_password: str = None, password: s
 	click.secho('Changing password', fg='yellow')
 
 	if not password or not current_password:
+		current_password = inquirer.secret(
+			message='Enter current password (default: raspberry)',
+			default='raspberry',
+			transformer=lambda _: commons.HIDDEN,
+		).execute()
+
 		retry = True
 		while retry:
-			questions = [
-				{
-					'type'       : 'password',
-					'name'       : 'cpassword',
-					'transformer': lambda _: commons.HIDDEN,
-					'message'    : 'Enter current password (default: raspberry)',
-					'default'    : 'raspberry'
-				},
-				{
-					'type'            : 'password',
-					'name'            : 'npassword',
-					'transformer'     : lambda _: commons.HIDDEN,
-					'message'         : 'Enter new password',
-					'validate'        : PasswordValidator(length=8, cap=True, number=True, special=False),
-					'long_instruction': 'Password must be at least 8 characters long, contain a number and a capital letter. All this.... for your safety!'
-				},
-				{
-					'type'       : 'password',
-					'name'       : 'npassword2',
-					'transformer': lambda _: commons.HIDDEN,
-					'message'    : 'Confirm new password'
-				}
-			]
+			password = inquirer.secret(
+				message='Enter new password',
+				transformer=lambda _: commons.HIDDEN,
+				validate=PasswordValidator(length=8, cap=True, number=True, special=False),
+			    long_instruction='Password must be at least 8 characters long, contain a number and a capital letter. All this.... for your safety!'
+			).execute()
+			confirm_password = inquirer.secret(
+				message='Confirm new password',
+				transformer=lambda _: commons.HIDDEN,
+			).execute()
 
-			answers = prompt(questions=questions)
-
-			if not answers:
-				commons.returnToMainMenu(ctx)
-
-			if answers['npassword'] != answers['npassword2']:
+			if password != confirm_password:
 				commons.printError('New passwords do not match')
 				retry = inquirer.confirm(message='Try again?', default=True).execute()
 				if not retry:
 					commons.returnToMainMenu(ctx)
 					return
 			else:
-				current_password = answers['cpassword']
-				password = answers['npassword']
 				break
 
 	commons.waitAnimation()
@@ -99,22 +85,11 @@ def changeHostname(ctx: click.Context, hostname: str):
 	click.secho('Changing device\'s hostname', fg='yellow')
 
 	if not hostname:
-		question = [
-			{
-				'type'    : 'input',
-				'name'    : 'hostname',
-				'message' : 'Enter new device name',
-				'default' : 'ProjectAlice',
-				'validate': lambda name: commons.validateHostname(name) is not None
-			}
-		]
-
-		answer = prompt(questions=question)
-
-		if not answer:
-			commons.returnToMainMenu(ctx)
-
-		hostname = answer['hostname']
+		hostname = inquirer.text(
+			message='Enter new device name',
+			default='ProjectAlice',
+			validate=lambda name: commons.validateHostname(name) is not None
+		).execute()
 
 	commons.waitAnimation()
 	commons.SSH.exec_command(f"sudo hostnamectl set-hostname '{hostname}'")

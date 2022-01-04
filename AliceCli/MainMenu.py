@@ -36,7 +36,6 @@ from AliceCli.utils.utils import aliceLogs, changeHostname, changePassword, rebo
 VERSION = ''
 CHECKED = False
 
-
 @click.command(name='main_menu')
 @click.pass_context
 def mainMenu(ctx: click.Context):

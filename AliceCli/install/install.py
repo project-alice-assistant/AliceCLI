@@ -28,7 +28,9 @@ import click
 import psutil
 import requests
 import yaml
-from InquirerPy import prompt
+from InquirerPy import inquirer
+from InquirerPy.base.control import Choice
+from InquirerPy.validator import EmptyInputValidator, PathValidator
 from tqdm import tqdm
 
 from AliceCli.utils import commons
@@ -45,7 +47,7 @@ def installSoundDevice(ctx: click.Context, device: str):
 	click.secho('Installing audio hardware', fg='yellow')
 	commons.waitAnimation()
 	if not device:
-		device = getDeviceName(ctx)
+		device = getDeviceName()
 		if not device:
 			return
 
@@ -70,7 +72,7 @@ def uninstallSoundDevice(ctx: click.Context, device: str, return_to_main_menu: b
 	click.secho('Uninstalling audio hardware', fg='yellow')
 	commons.waitAnimation()
 	if not device:
-		device = getDeviceName(ctx)
+		device = getDeviceName()
 		if not device:
 			return
 
@@ -86,20 +88,16 @@ def uninstallSoundDevice(ctx: click.Context, device: str, return_to_main_menu: b
 		commons.returnToMainMenu(ctx, pause=True)
 
 
-def getDeviceName(ctx: click.Context) -> str:
-	answer = prompt(questions={
-		'type'   : 'list',
-		'name'   : 'device',
-		'message': 'Select your device',
-		'choices': ['respeaker2', 'respeaker4', 'respeaker4MicLinearArray', 'respeaker6MicArray']
-	})
-
-	if not answer:
-		commons.printError('Cannot continue without device information')
-		commons.returnToMainMenu(ctx, pause=True)
-		return ''
-
-	return answer['device']
+def getDeviceName() -> str:
+	return inquirer.select(
+		message='Select your device',
+		choices=[
+			Choice('respeaker2', name='Respeaker 2'),
+			Choice('respeaker4', name='Respeaker 4-mic array'),
+			Choice('respeaker4MicLinearArray', name='Respeaker 4 mic linear array'),
+			Choice('respeaker6MicArray', name='Respeaker 6 mic array')
+		]
+	).execute()
 
 
 @click.command(name='installAlice')
@@ -107,219 +105,201 @@ def getDeviceName(ctx: click.Context) -> str:
 @click.pass_context
 @checkConnection
 def installAlice(ctx: click.Context, force: bool):
-	click.secho('\nInstalling Alice, yayyyy!', fg='yellow')
+	click.secho('\nInstalling Alice!', fg='yellow')
 
 	result = sshCmdWithReturn('test -d ~/ProjectAlice/ && echo "1"')[0].readline()
 	if result:
 		if not force:
 			commons.printError('Alice seems to already exist on that host')
-			answer = prompt(questions={
-				'type'   : 'confirm',
-				'message': 'Erase and reinstall',
-				'name'   : 'confirm',
-				'default': False
-			})
-			if not answer['confirm']:
+			confirm = inquirer.confirm(
+				message='Erase and reinstall?',
+				default=False
+			).execute()
+
+			if confirm:
 				commons.returnToMainMenu(ctx)
 				return
 
 		sshCmd('sudo systemctl stop ProjectAlice')
 		sshCmd('sudo rm -rf ~/ProjectAlice')
 
-	questions = [
-		{
-			'type'           : 'password',
-			'name'           : 'adminPinCode',
-			'transformer'    : lambda _: commons.HIDDEN,
-			'message'        : 'Enter an admin pin code. It must be made of 4 characters, all digits only. (default: 1234)',
-			'default'        : '1234',
-			'validate'       : lambda code: code.isdigit() and int(code) < 10000,
-			'invalid_message': 'Pin must be 4 numbers'
-		},
-		{
-			'type'    : 'input',
-			'name'    : 'mqttHost',
-			'message' : 'Mqtt host:',
-			'default' : 'localhost',
-			'validate': lambda string: len(string) > 0
-		},
-		{
-			'type'    : 'input',
-			'name'    : 'mqttPort',
-			'message' : 'Mqtt port:',
-			'default' : '1883',
-			'validate': lambda port: port.isdigit()
-		},
-		{
-			'type'   : 'list',
-			'name'   : 'activeLanguage',
-			'message': 'What language should Alice be using?',
-			'default': 'en',
-			'choices': [
-				'en',
-				'de',
-				'fr',
-				'it'
-			]
-		},
-		{
-			'type'    : 'input',
-			'name'    : 'activeCountryCode',
-			'message' : 'What country code should Alice be using?',
-			'default' : 'US',
-			'validate': lambda string: len(string) > 0
-		},
-		{
-			'type'   : 'list',
-			'name'   : 'releaseType',
-			'message': 'What releases do you want to receive? If you are unsure, LEAVE THIS TO MASTER',
-			'default': 'master',
-			'choices': [
-				'master',
-				'rc',
-				'beta',
-				'alpha'
-			]
-		},
-		{
-			'type'   : 'list',
-			'name'   : 'audioDevice',
-			'message': 'Select your audio hardware if listed',
-			'default': 'respeaker2',
-			'choices': [
-				'usbMic',
-				'respeaker2',
-				'respeaker4',
-				'respeaker6MicArray',
-				'respeaker7',
-				'respeakerCoreV2',
-				'googleAIY',
-				'googleAIY2',
-				'matrixCreator',
-				'matrixVoice',
-				'ps3eye',
-				'jabra410',
-				'none of the above'
-			]
-		},
-		{
-			'type'   : 'confirm',
-			'message': 'Did you already install your sound hardware using Alice CLI or confirmed it to be working?',
-			'name'   : 'soundInstalled',
-			'default': False
-		},
-		{
-			'type'   : 'confirm',
-			'message': 'Do you want to install HLC? HLC can pilot leds such as the ones on Respeakers to provide visual feedback.',
-			'name'   : 'installHLC',
-			'default': False
-		},
-		{
-			'type'   : 'confirm',
-			'message': 'Do you want to set more advanced configs? If you do, DO NOT ABORT IN THE MIDDLE!',
-			'name'   : 'advancedConfigs',
-			'default': False
-		},
-		{
-			'type'   : 'list',
-			'message': 'Select the ASR engine you want to use',
-			'name'   : 'asr',
-			'choices': [
-				'Google',
-				'Snips (English only!)',
-				'Coqui',
-				'Deepspeech',
-				'Pocketsphinx'
-			],
-			'when'   : lambda userAnswers: userAnswers['advancedConfigs']
-		},
-		{
-			'type'   : 'list',
-			'message': 'Select the TTS engine you want to use',
-			'name'   : 'tts',
-			'choices': [
-				'Pico',
-				'Mycroft',
-				'Amazon',
-				'Google',
-				'Watson'
-			],
-			'when'   : lambda userAnswers: userAnswers['advancedConfigs']
-		},
-		{
-			'type'       : 'password',
-			'transformer': lambda _: commons.HIDDEN,
-			'message'    : 'Enter your AWS access key',
-			'name'       : 'awsAccessKey',
-			'when'       : lambda userAnswers: userAnswers['advancedConfigs'] and userAnswers['tts'] == 'Amazon'
-		},
-		{
-			'type'       : 'password',
-			'transformer': lambda _: commons.HIDDEN,
-			'message'    : 'Enter your AWS secret key',
-			'name'       : 'awsSecretKey',
-			'when'       : lambda userAnswers: userAnswers['advancedConfigs'] and userAnswers['tts'] == 'Amazon'
-		},
-		{
-			'type'   : 'input',
-			'message': 'Enter your Google service file path',
-			'name'   : 'googleServiceFile',
-			'when'   : lambda userAnswers: userAnswers['advancedConfigs'] and (userAnswers['asr'] == 'Google' or userAnswers['tts'] == 'Google')
-		},
-		{
-			'type'   : 'confirm',
-			'message': 'Do you want Alice to use short replies?',
-			'name'   : 'shortReplies',
-			'default': False,
-			'when'   : lambda userAnswers: userAnswers['advancedConfigs']
-		},
-		{
-			'type'   : 'confirm',
-			'message': 'Do you want to activate the developer mode?',
-			'name'   : 'devMode',
-			'default': False,
-			'when'   : lambda userAnswers: userAnswers['advancedConfigs']
-		},
-		{
-			'type'   : 'input',
-			'message': 'Enter your Github username. This is used for skill development. If not needed, leave blank',
-			'name'   : 'githubUsername',
-			'default': '',
-			'when'   : lambda userAnswers: userAnswers['advancedConfigs']
-		},
-		{
-			'type'       : 'password',
-			'transformer': lambda _: commons.HIDDEN,
-			'message'    : 'Enter your Github access token. This is used for skill development',
-			'name'       : 'githubToken',
-			'when'       : lambda userAnswers: userAnswers['advancedConfigs'] and userAnswers['githubUsername']
-		},
-		{
-			'type'   : 'confirm',
-			'message': 'Enable telemetry data storing?',
-			'name'   : 'enableDataStoring',
-			'default': True,
-			'when'   : lambda userAnswers: userAnswers['advancedConfigs']
-		},
-		{
-			'type'   : 'confirm',
-			'message': 'Enable skill auto update?',
-			'name'   : 'skillAutoUpdate',
-			'default': True,
-			'when'   : lambda userAnswers: userAnswers['advancedConfigs']
-		}
-	]
+	adminPinCode = inquirer.secret(
+		message='Enter an admin pin code. It must be made of 4 characters, all digits only. (default: 1234)',
+		default='1234',
+		validate=lambda code: code.isdigit() and int(code) < 10000,
+		invalid_message='Pin must be 4 numbers',
+		transformer=lambda _: commons.HIDDEN
+	).execute()
 
-	answers = prompt(questions)
-	if len(answers) < 10:
-		commons.returnToMainMenu(ctx)
-		return
+	mqttHost = inquirer.text(
+		message='Mqtt hostname',
+		default='localhost',
+		validate=EmptyInputValidator(commons.NO_EMPTY)
+	).execute()
+
+	mqttPort = inquirer.number(
+		message='Mqtt port',
+		default=1883,
+		validate=EmptyInputValidator(commons.NO_EMPTY)
+	).execute()
+
+	activeLanguage = inquirer.select(
+		message='What language should Alice be using?',
+		default='en',
+		choices=[
+			Choice('en', name='English'),
+			Choice('de', name='German'),
+			Choice('fr', name='French'),
+			Choice('it', name='Italian'),
+			Choice('pl', name='Polish'),
+		]
+	).execute()
+
+	activeCountryCode = inquirer.select(
+		message='Enter the country code to use.',
+		default='EN',
+		choices=commons.COUNTRY_CODES
+	).execute()
+
+	releaseType = inquirer.select(
+		message='What releases do you want to receive? If you are unsure, leave this to Stable releases!',
+		default='master',
+		choices=[
+			Choice('master', name='Stable releases'),
+			Choice('rc', name='Release candidates'),
+			Choice('beta', name='Beta releases'),
+			Choice('alpha', name='Alpha releases')
+		]
+	).execute()
+
+	audioDevice = inquirer.select(
+		message='Select your audio hardware if listed',
+		default='respeaker2',
+		choices=[
+			Choice('respeaker2', name='Respeaker 2 mics'),
+			Choice('respeaker4', name='Respeaker 4 mic array'),
+			Choice('respeaker6', name='Respeaker 6 mic array'),
+			Choice('respeaker7', name='Respeaker 7'),
+			Choice('respeakerCoreV2', name='Respeaker Core version 2'),
+			Choice('googleAIY', name='Google AIY'),
+			Choice('googleAIY2', name='Google AIY 2'),
+			Choice('matrixCreator', name='Matrix Creator'),
+			Choice('matrixVoice', name='Matrix Voice'),
+			Choice('ps3eye', name='PS3 Eye'),
+			Choice('jabra410', name='Jabra 410'),
+			Choice(None)
+		]
+	).execute()
+
+	soundInstalled = inquirer.confirm(
+		message='Did you already install your sound hardware using Alice CLI or confirmed it to be working?',
+		default=False
+	).execute()
+
+	installHLC = inquirer.confirm(
+		message='Do you want to install HLC? HLC can pilot leds such as the ones on Respeakers to provide visual feedback.',
+		default=False
+	).execute()
+
+	advancedConfigs = inquirer.confirm(
+		message='Do you want to set more advanced configs? If you do, DO NOT ABORT IN THE MIDDLE!',
+		default=False
+	).execute()
+
+	asr = 'coqui'
+	tts = 'pico'
+	awsAccessKey = ''
+	awsSecretKey = ''
+	googleServiceFile = ''
+	shortReplies = False
+	devMode = False
+	githubUsername = ''
+	githubToken = ''
+	enableDataStoring = True
+	skillAutoUpdate = True
+
+	if advancedConfigs:
+		asr = inquirer.select(
+			message='Select the ASR engine you want to use',
+			default='coqui',
+			choices=[
+				Choice('coqui', name='Coqui'),
+				Choice('snips', name='Snips (English only!)'),
+				Choice('google', name='Google (Online!)'),
+				Choice('deepspeech', name='Deepspeech'),
+				Choice('pocketsphinx', name='PocketSphinx')
+			]
+		).execute()
+
+		tts = inquirer.select(
+			message='Select the TTS engine you want to use',
+			default='pico',
+			choices=[
+				Choice('pico', name='Coqui'),
+				Choice('mycroft', name='Mycroft'),
+				Choice('amazon', name='Amazon'),
+				Choice('google', name='Google'),
+				Choice('watson', name='Watson')
+			]
+		).execute()
+
+		if tts == 'amazon':
+			awsAccessKey = inquirer.secret(
+				message='Enter your AWS access key',
+				validate=EmptyInputValidator(commons.NO_EMPTY),
+				transformer=lambda _: commons.HIDDEN
+			).execute()
+
+			awsSecretKey = inquirer.secret(
+				message='Enter your AWS secret key',
+				validate=EmptyInputValidator(commons.NO_EMPTY),
+				transformer=lambda _: commons.HIDDEN
+			).execute()
+
+		if tts == 'google' or asr == 'google':
+			googleServiceFile = inquirer.filepath(
+				message='Enter your Google service file path',
+				default='~/',
+				validate=PathValidator(is_file=True, message='Input is not a file')
+			).execute()
+
+		shortReplies = inquirer.confirm(
+			message='Do you want Alice to use short replies?',
+			default=False
+		).execute()
+
+		devMode = inquirer.confirm(
+			message='Do you want to activate the developer mode?',
+			default=False
+		).execute()
+
+		if devMode:
+			githubUsername = inquirer.text(
+				message='Enter your Github username. This is required for Dev Mode.',
+				validate=EmptyInputValidator(commons.NO_EMPTY)
+			).execute()
+
+			githubToken = inquirer.secret(
+				message='Enter your Github access token. This is required for Dev Mode.',
+				validate=EmptyInputValidator(commons.NO_EMPTY),
+				transformer=lambda _: commons.HIDDEN
+			).execute()
+
+		enableDataStoring = inquirer.confirm(
+			message='Enable telemetry data storing?',
+			default=True
+		).execute()
+
+		skillAutoUpdate = inquirer.confirm(
+			message='Enable skill auto update?',
+			default=True
+		).execute()
 
 	commons.waitAnimation()
 	confFile = Path(Path.home(), '.pacli/projectalice.yaml')
 	confFile.parent.mkdir(parents=True, exist_ok=True)
 
-	updateSource = commons.getUpdateSource(answers['releaseType'])
+	updateSource = commons.getUpdateSource(releaseType)
 
 	try:
 		with requests.get(url=f'https://raw.githubusercontent.com/project-alice-assistant/ProjectAlice/{updateSource}/ProjectAlice.yaml', stream=True) as r:
@@ -339,42 +319,42 @@ def installAlice(ctx: click.Context, force: bool):
 			commons.printError(f'Failed reading projectalice.yaml {e}')
 			commons.returnToMainMenu(ctx, pause=True)
 
-	confs['adminPinCode'] = str(int(answers['adminPinCode'])).zfill(4)
-	confs['mqttHost'] = answers['mqttHost']
-	confs['mqttPort'] = int(answers['mqttPort'])
-	confs['activeLanguage'] = answers['activeLanguage']
-	confs['activeCountryCode'] = answers['activeCountryCode']
-	confs['useHLC'] = answers['installHLC']
-	confs['aliceUpdateChannel'] = answers['releaseType']
-	confs['skillsUpdateChannel'] = answers['releaseType']
-	confs['ttsLanguage'] = f'{answers["activeLanguage"].lower()}-{answers["activeCountryCode"].upper()}'
+	confs['adminPinCode'] = str(int(adminPinCode)).zfill(4)
+	confs['mqttHost'] = mqttHost
+	confs['mqttPort'] = int(mqttPort)
+	confs['activeLanguage'] = activeLanguage
+	confs['activeCountryCode'] = activeCountryCode
+	confs['useHLC'] = installHLC
+	confs['aliceUpdateChannel'] = releaseType
+	confs['skillsUpdateChannel'] = releaseType
+	confs['ttsLanguage'] = f'{activeLanguage}-{activeCountryCode}'
 
-	if answers['soundInstalled']:
+	if soundInstalled:
 		confs['installSound'] = False
-		if answers['audioDevice'] != 'none of the above':
-			confs['audioHardware'][answers['audioDevice']] = True
+		if audioDevice:
+			confs['audioHardware'][audioDevice] = True
 	else:
 		confs['installSound'] = True
 
-	confs['asr'] = answers.get('asr', 'coqui').lower()
-	confs['awsAccessKey'] = answers.get('awsAccessKey', '')
-	confs['awsSecretKey'] = answers.get('awsSecretKey', '')
-	confs['tts'] = answers.get('tts', 'pico').lower()
-	confs['shortReplies'] = answers.get('shortReplies', False)
-	confs['devMode'] = answers.get('devMode', False)
-	confs['githubUsername'] = answers.get('githubUsername', '')
-	confs['githubToken'] = answers.get('githubToken', '')
-	confs['enableDataStoring'] = answers.get('enableDataStoring', True)
-	confs['skillAutoUpdate'] = answers.get('skillAutoUpdate', True)
+	confs['asr'] = asr
+	confs['awsAccessKey'] = awsAccessKey
+	confs['awsSecretKey'] = awsSecretKey
+	confs['tts'] = tts
+	confs['shortReplies'] = shortReplies
+	confs['devMode'] = devMode
+	confs['githubUsername'] = githubUsername
+	confs['githubToken'] = githubToken
+	confs['enableDataStoring'] = enableDataStoring
+	confs['skillAutoUpdate'] = skillAutoUpdate
 
-	if 'googleServiceFile' in answers and Path(answers.get('googleServiceFile')).exists():
-		confs['googleServiceFile'] = Path(answers['googleServiceFile']).read_text()
+	if googleServiceFile and Path(googleServiceFile).exists():
+		confs['googleServiceFile'] = Path(googleServiceFile).read_text()
 
-	if answers['advancedConfigs']:
-		if answers['asr'].lower() == 'google':
-			confs['keepASROffline'] = False
-		if answers['tts'].lower() in ['amazon', 'google', 'watson']:
-			confs['keepTTSOffline'] = False
+	if asr == 'google':
+		confs['keepASROffline'] = False
+
+	if tts in ['amazon', 'google', 'watson']:
+		confs['keepTTSOffline'] = False
 
 	with confFile.open(mode='w') as f:
 		yaml.dump(confs, f)
@@ -416,33 +396,26 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 	flasherAvailable = Path(balenaExecutablePath).exists()
 	downloadsPath = Path.home() / 'Downloads'
 
-	questions = [
-		{
-			'type'   : 'confirm',
-			'message': 'Do you want to flash your SD card with Raspberry PI OS?',
-			'name'   : 'doFlash',
-			'default': False
-		},
-		{
-			'type'   : 'confirm',
-			'message': 'balena-cli was not found on your system. It is required for flashing SD cards, do you want to install it?',
-			'name'   : 'installBalena',
-			'default': True,
-			'when'   : lambda _: not flasherAvailable
-		}
-	]
+	doFlash = inquirer.confirm(
+		message='Do you want to flash your SD card with Raspberry PI OS?',
+		default=False
+	).execute()
 
-	answers = prompt(questions)
-	answers.setdefault('installBalena', True)
-
-	if not answers or 'doFlash' not in answers:
-		commons.returnToMainMenu(ctx)
+	if doFlash and not commons.isAdmin():
+		commons.returnToMainMenu(ctx=ctx, pause=True, message='You need admin rights for this, please restart Alice CLI with admin elevated rights.')
 		return
 
-	if answers['doFlash'] and not flasherAvailable and not answers['installBalena']:
+	installBalena = False
+	if doFlash and not flasherAvailable:
+		installBalena = inquirer.confirm(
+			message='balena-cli was not found on your system. It is required for flashing SD cards, do you want to install it?',
+			default=True
+		)
+
+	if doFlash and not flasherAvailable and not installBalena:
 		commons.returnToMainMenu(ctx, pause=True, message='Well then, I cannot flash your SD card without the appropriate tool to do it')
 		return
-	elif answers['doFlash'] and not flasherAvailable and answers['installBalena']:
+	elif doFlash and not flasherAvailable and installBalena:
 		commons.printInfo('Installing Balena-cli, please wait...')
 		balenaVersion = 'v13.1.1'
 		if operatingSystem == 'windows':
@@ -485,7 +458,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 			exit(0)
 
 	images = list()
-	if answers['doFlash']:
+	if doFlash:
 		commons.printInfo('Checking for Raspberry PI OS images, please wait....')
 		# Potential local files
 		downloadsPath = Path.home() / 'Downloads'
@@ -512,81 +485,66 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 	# 		images.extend([directory + node.get('href') for node in soup.find_all('a') if node.get('href').endswith('.zip')])
 
 	commons.printInfo('Checking for available SD card drives, please wait....')
-	drives = dict()
+	drives = list()
 	if operatingSystem == 'linux':
 		balenaCommand = f'{balenaExecutablePath} util available-drives'
 		driveSep = os.path.sep  # typically '/'
 	else:
 		balenaCommand = 'balena util available-drives'
 		driveSep = '\\'
+
 	output = subprocess.run(balenaCommand.split(), capture_output=True, shell=True).stdout.decode()
 	for line in output.split('\n'):
 		if not line.startswith(driveSep):
 			continue
-		drives[line] = line.split(' ')[0]
+
+		drives.append(Choice(line.split(' ')[0], name=line))
 
 	if not drives:
 		commons.returnToMainMenu(ctx, pause=True, message='Please insert your SD card first')
 		return
 
-	questions = [
-		{
-			'type'   : 'list',
-			'name'   : 'image',
-			'message': 'Select the image you want to flash. Keep in mind we only officially support the "Buster" Debian distro!',
-			'choices': images,
-			'when'   : lambda _: answers['doFlash']
-		},
-		{
-			'type'   : 'list',
-			'name'   : 'drive',
-			'message': 'Select your SD card drive',
-			'choices': drives
-		},
-		{
-			'type'    : 'input',
-			'name'    : 'ssid',
-			'message' : 'Enter the name of your Wifi network',
-			'validate': lambda c: len(c) > 0
-		},
-		{
-			'type'       : 'password',
-			'transformer': lambda _: commons.HIDDEN,
-			'name'       : 'password',
-			'message'    : 'Enter your Wifi network\'s key'
-		},
-		{
-			'type'    : 'input',
-			'name'    : 'country',
-			'message' : 'Enter your country code (example: CH, US, DE, FR etc)',
-			'validate': lambda c: len(c) == 2
-		}
-	]
+	image = ''
+	if doFlash:
+		image = inquirer.select(
+			message='Select the image you want to flash. Keep in mind we only officially support the "Buster" Debian distro!',
+			choices=images
+		).execute()
 
-	newAnswers = prompt(questions=questions)
+	drive = inquirer.select(
+		message='Select your SD card drive',
+		choices=drives
+	).execute()
 
-	if not newAnswers:
-		commons.returnToMainMenu(ctx)
-		return
+	ssid = inquirer.text(
+		message='Enter the name of your Wifi network',
+		validate=EmptyInputValidator(commons.NO_EMPTY)
+	).execute()
 
-	answers = {**answers, **newAnswers}
+	password = inquirer.secret(
+		message='Enter your Wifi network\'s key',
+		transformer=lambda _: commons.HIDDEN
+	).execute()
 
-	# We need the value, not the full definition of the drive...
-	answers['drive'] = drives[answers['drive']]
+	country = inquirer.select(
+		message='Select your country. This is used for your Wi-Fi settings!',
+		default='EN',
+		choices=commons.COUNTRY_CODES
+	).execute()
 
 	commons.printInfo("Ok, let's do this!")
-	if answers['doFlash']:
-		if answers['image'].startswith('https'):
-			file = downloadsPath / answers['image'].split('/')[-1]
-			doDownload(url=answers['image'], destination=file)
+	if doFlash:
+		if image.startswith('https'):
+			file = downloadsPath / image.split('/')[-1]
+			doDownload(url=image, destination=file)
 		else:
-			file = answers['image']
+			file = image
 		if operatingSystem == 'windows' or operatingSystem == 'linux':
 			if operatingSystem == 'linux':
 				# this only works on distros with "sudo" support.
-				balenaCommand = f'sudo {balenaExecutablePath} local flash {str(file)} --drive {answers["drive"]} --yes'
+				balenaCommand = f'sudo {balenaExecutablePath} local flash {str(file)} --drive {drive} --yes'
 			else:
-				balenaCommand = f'balena local flash {str(file)} --drive {answers["drive"]} --yes'.split()
+				balenaCommand = f'balena local flash {str(file)} --drive {drive} --yes'.split()
 			subprocess.run(balenaCommand, shell=True)
 			time.sleep(5)
 		else:
@@ -601,7 +559,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 		# e.g. on /dev/sda drive /dev/sda1 is "boot" and /dev/sda2 is "rootfs"
 		# Lookup up the boot mount point path via lsblk
 
-		lsblkCommand = f'sudo lsblk --noheadings --list {answers["drive"]}'
+		lsblkCommand = f'sudo lsblk --noheadings --list {drive}'
 		output = subprocess.run(lsblkCommand, capture_output=True, shell=True).stdout.decode()
 		for line in output.split('\n'):
 			mountPoint = line.split(' ')[-1]
@@ -620,7 +578,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 				if 'rw,removable' not in dp.opts.lower():
 					continue
 				drives.append(dp.device)
-				if i == int(answers['drive'][-1]):
+				if i == int(drive[-1]):
 					drive = dp.device
 
 			if not drives:
@@ -632,35 +590,25 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 
 	if not drive:
 		commons.printError('Something went weird flashing/writing on your SD card, sorry, I cannot find the SD card device anymore...')
-		questions = [
-			{
-				'type'   : 'list',
-				'name'   : 'drive',
-				'message': 'Which drive is the SD boot device?',
-				'choices': drives
-			}
-		]
-		newAnswers = prompt(questions=questions)
-		if not newAnswers:
-			commons.returnToMainMenu(ctx, pause=True, message="I'm really sorry, but I just can't continue without this info, sorry for wasting your time...")
-		answers = {**answers, **newAnswers}
-	else:
-		answers['drive'] = drive
+		drive = inquirer.select(
+			message='Which drive is the SD boot device?',
+			choices=drives
+		).execute()
 
 	# Now let's enable SSH and Wi-Fi on boot.
 	commons.printInfo('Adding ssh & wifi to SD boot....')
-	Path(answers['drive'], 'ssh').touch()
+	Path(drive, 'ssh').touch()
 
-	content = f'country={answers["country"]}\n'
+	content = f'country={country}\n'
 	content += 'ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev\n'
 	content += 'update_config=1\n'
 	content += 'network={\n'
-	content += f'\tssid="{answers["ssid"]}"\n'
+	content += f'\tssid="{ssid}"\n'
 	content += '\tscan_ssid=1\n'
-	content += f'\tpsk="{answers["password"]}"\n'
+	content += f'\tpsk="{password}"\n'
 	content += '\tkey_mgmt=WPA-PSK\n'
 	content += '}'
-	Path(answers['drive'], 'wpa_supplicant.conf').write_text(content)
+	Path(drive, 'wpa_supplicant.conf').write_text(content)
 
 	commons.returnToMainMenu(ctx, pause=True, message='SD card is ready. Please plug it in your device and boot it!')
 
