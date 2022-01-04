@@ -457,8 +457,15 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 			click.pause('I have no idea how to install stuff on Mac, so I have downloaded the tool for you, please install it. Oh, and contact Psycho to let him know how to install a pkg file on Mac ;-)')
 			exit(0)
 
-	images = list()
+	if operatingSystem == 'linux':
+		balenaCommand = f'{balenaExecutablePath} util available-drives'
+		driveSep = os.path.sep  # typically '/'
+	else:
+		balenaCommand = 'balena util available-drives'
+		driveSep = '\\'
+
 	if doFlash:
+		images = list()
 		commons.printInfo('Checking for Raspberry PI OS images, please wait....')
 		# Potential local files
 		downloadsPath = Path.home() / 'Downloads'
@@ -467,54 +474,68 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 
 		images.append('https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2021-05-28/2021-05-07-raspios-buster-armhf-lite.zip')
 
-	# Deactivated for now, we enforce Buster only!
-	# directories = list()
-	# Get a list of available images online
-	# url = 'https://downloads.raspberrypi.org/raspios_lite_armhf/images/'
-	# page = requests.get(url)
-	# if page.status_code == 200:
-	# 	soup = BeautifulSoup(page.text, features='html.parser')
-	# 	directories = [url + node.get('href') for node in soup.find_all('a') if node.get('href').endswith('/')]
-	# 	if directories:
-	# 		directories.pop(0)  # This is the return link, remove it...
-	#
-	# for directory in directories:
-	# 	page = requests.get(directory)
-	# 	if page.status_code == 200:
-	# 		soup = BeautifulSoup(page.text, features='html.parser')
-	# 		images.extend([directory + node.get('href') for node in soup.find_all('a') if node.get('href').endswith('.zip')])
+		# Deactivated for now, we enforce Buster only!
+		# directories = list()
+		# Get a list of available images online
+		# url = 'https://downloads.raspberrypi.org/raspios_lite_armhf/images/'
+		# page = requests.get(url)
+		# if page.status_code == 200:
+		# 	soup = BeautifulSoup(page.text, features='html.parser')
+		# 	directories = [url + node.get('href') for node in soup.find_all('a') if node.get('href').endswith('/')]
+		# 	if directories:
+		# 		directories.pop(0)  # This is the return link, remove it...
+		#
+		# for directory in directories:
+		# 	page = requests.get(directory)
+		# 	if page.status_code == 200:
+		# 		soup = BeautifulSoup(page.text, features='html.parser')
+		# 		images.extend([directory + node.get('href') for node in soup.find_all('a') if node.get('href').endswith('.zip')])
 
-	commons.printInfo('Checking for available SD card drives, please wait....')
-	drives = list()
-	if operatingSystem == 'linux':
-		balenaCommand = f'{balenaExecutablePath} util available-drives'
-		driveSep = os.path.sep  # typically '/'
-	else:
-		balenaCommand = 'balena util available-drives'
-		driveSep = '\\'
+		commons.printInfo('Checking for available SD card drives, please wait....')
+		drives = list()
 
-	output = subprocess.run(balenaCommand.split(), capture_output=True, shell=True).stdout.decode()
-	for line in output.split('\n'):
-		if not line.startswith(driveSep):
-			continue
+		output = subprocess.run(balenaCommand.split(), capture_output=True, shell=True).stdout.decode()
+		for line in output.split('\n'):
+			if not line.startswith(driveSep):
+				continue
 
-		drives.append(Choice(line.split(' ')[0], name=line))
+			drives.append(Choice(line.split(' ')[0], name=line))
 
-	if not drives:
-		commons.returnToMainMenu(ctx, pause=True, message='Please insert your SD card first')
-		return
+		if not drives:
+			commons.returnToMainMenu(ctx, pause=True, message='Please insert your SD card first')
+			return
 
-	image = ''
-	if doFlash:
 		image = inquirer.select(
-			message='Select the image you want to flash. Keep in mind we only officially support the "Buster" Debian distro!',
+			message='Select the image you want to flash. Keep in mind we only officially support the "Buster" Raspberry pi OS distro!',
 			choices=images
 		).execute()
 
-	drive = inquirer.select(
-		message='Select your SD card drive',
-		choices=drives
-	).execute()
+		drive = inquirer.select(
+			message='Select your SD card drive',
+			choices=drives
+		).execute()
+
+		commons.printInfo("Flashing SD card, please wait")
+
+		if image.startswith('https'):
+			file = downloadsPath / image.split('/')[-1]
+			doDownload(url=image, destination=file)
+		else:
+			file = image
+
+		if operatingSystem == 'windows' or operatingSystem == 'linux':
+			if operatingSystem == 'linux':
+				# this only works on distros with "sudo" support.
+				balenaCommand = f'sudo {balenaExecutablePath} local flash {str(file)} --drive {drive} --yes'
+			else:
+				balenaCommand = f'balena local flash {str(file)} --drive {drive} --yes'.split()
+			subprocess.run(balenaCommand, shell=True)
+			time.sleep(5)
+		else:
+			commons.returnToMainMenu(ctx, pause=True, message='Flashing only supported on Windows and Linux systems for now. If you have the knowledge to implement it on other systems, feel free to pull request!')
+			return
+
+		click.pause('Flashing complete. Please eject, unplug and replug your SD back, then press any key to continue...')
 
 	ssid = inquirer.text(
 		message='Enter the name of your Wifi network',
@@ -532,27 +553,6 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 		choices=commons.COUNTRY_CODES
 	).execute()
 
-	commons.printInfo("Ok, let's do this!")
-	if doFlash:
-		if image.startswith('https'):
-			file = downloadsPath / image.split('/')[-1]
-			doDownload(url=image, destination=file)
-		else:
-			file = image
-		if operatingSystem == 'windows' or operatingSystem == 'linux':
-			if operatingSystem == 'linux':
-				# this only works on distros with "sudo" support.
-				balenaCommand = f'sudo {balenaExecutablePath} local flash {str(file)} --drive {drive} --yes'
-			else:
-				balenaCommand = f'balena local flash {str(file)} --drive {drive} --yes'.split()
-			subprocess.run(balenaCommand, shell=True)
-			time.sleep(5)
-		else:
-			commons.returnToMainMenu(ctx, pause=True, message='Flashing only supported on Windows and Linux systems for now. If you have the knowledge to implement it on other systems, feel free to pull request!')
-			return
-
-		click.pause('Flashing complete. Please eject, unplug and replug your SD back, then press any key to continue...')
-
 	drives = list()
 	drive = ''
 	if operatingSystem == 'linux':
@@ -560,8 +560,8 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 		# e.g. on /dev/sda drive /dev/sda1 is "boot" and /dev/sda2 is "rootfs"
 		# Lookup up the boot mount point path via lsblk
 
-		lsblkCommand = f'sudo lsblk --noheadings --list {drive}'
-		output = subprocess.run(lsblkCommand, capture_output=True, shell=True).stdout.decode()
+		command = f'sudo lsblk --noheadings --list {drive}'
+		output = subprocess.run(command, capture_output=True, shell=True).stdout.decode()
 		for line in output.split('\n'):
 			mountPoint = line.split(' ')[-1]
 			if not mountPoint.startswith(driveSep):
@@ -590,15 +590,16 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 					break
 
 	if not drive:
-		commons.printError('Please select the SD `boot` partition')
 		drive = inquirer.select(
-			message='Which drive is the SD boot device?',
+			message='Please select the SD `boot` partition',
 			choices=drives
 		).execute()
 
 	# Now let's enable SSH and Wi-Fi on boot.
 	commons.printInfo('Adding ssh & wifi to SD boot....')
-	Path(drive, 'ssh').touch()
+	sshFile = Path(drive, 'ssh')
+	sshFile.unlink(missing_ok=True)
+	sshFile.touch()
 
 	content = f'country={country}\n'
 	content += 'ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev\n'
