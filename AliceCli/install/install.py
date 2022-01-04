@@ -387,6 +387,10 @@ def installAlice(ctx: click.Context, force: bool):
 @click.command(name='prepareSdCard')
 @click.pass_context
 def prepareSdCard(ctx: click.Context):  # NOSONAR
+	if not commons.isAdmin():
+		commons.returnToMainMenu(ctx=ctx, pause=True, message='You need admin rights for this, please restart Alice CLI with admin elevated rights.')
+		return
+
 	operatingSystem = platform.system().lower()
 
 	balenaExecutablePath = which('balena')
@@ -400,10 +404,6 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 		message='Do you want to flash your SD card with Raspberry PI OS?',
 		default=False
 	).execute()
-
-	if doFlash and not commons.isAdmin():
-		commons.returnToMainMenu(ctx=ctx, pause=True, message='You need admin rights for this, please restart Alice CLI with admin elevated rights.')
-		return
 
 	installBalena = False
 	if doFlash and not flasherAvailable:
@@ -550,7 +550,8 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 		else:
 			commons.returnToMainMenu(ctx, pause=True, message='Flashing only supported on Windows and Linux systems for now. If you have the knowledge to implement it on other systems, feel free to pull request!')
 			return
-	click.pause("Flashing complete. Please eject, unplug and replug your SD back, then press any key to continue...")
+
+		click.pause('Flashing complete. Please eject, unplug and replug your SD back, then press any key to continue...')
 
 	drives = list()
 	drive = ''
@@ -571,25 +572,25 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 			commons.printError(f'For some reason I cannot find the SD boot partition mount point {drive}.')
 			commons.returnToMainMenu(ctx, pause=True, message="I'm really sorry, but I just can't continue without this info, sorry for wasting your time...")
 	else:
-		while not drives:
-			i = 0
+		j = 0
+		while len(drives) <= 0:
+			j += 1
 			for dp in psutil.disk_partitions():
-				i += 1
 				if 'rw,removable' not in dp.opts.lower():
 					continue
+
 				drives.append(dp.device)
-				if i == int(drive[-1]):
-					drive = dp.device
 
 			if not drives:
-				if i < 5:
-					commons.printError('For some reason I cannot find the SD boot partition. Please eject then unplug, replug your SD back and press any key to continue')
+				if j < 3:
+					drives = list()
+					commons.printError('For some reason I cannot find any writable SD partition. Please eject then unplug, replug your SD back and press any key to continue')
 					click.pause()
 				else:
 					break
 
 	if not drive:
-		commons.printError('Something went weird flashing/writing on your SD card, sorry, I cannot find the SD card device anymore...')
+		commons.printError('Please select the SD `boot` partition')
 		drive = inquirer.select(
 			message='Which drive is the SD boot device?',
 			choices=drives
