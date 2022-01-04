@@ -41,6 +41,7 @@ SSH: Optional[paramiko.SSHClient] = None
 CONNECTED_TO: str = ''
 ANIMATION_FLAG = Event()
 ANIMATION_THREAD: Optional[Thread] = None
+HIDDEN = '[hidden]'
 
 
 @click.command(name='discover')
@@ -161,6 +162,7 @@ def connect(ctx: click.Context, ip_address: str, port: int, user: str, password:
 		question = [
 			{
 				'type'   : 'password',
+				'transformer': lambda _: HIDDEN,
 				'name'   : 'password',
 				'message': 'Please enter the connection password'
 			}
@@ -351,7 +353,7 @@ def sshCmd(cmd: str, hide: bool = False):
 
 	while line := stdout.readline():
 		if not hide:
-			click.secho(line, nl=False, color='yellow')
+			click.secho(line, nl=False, fg='yellow')
 
 
 def sshCmdWithReturn(cmd: str) -> Tuple:

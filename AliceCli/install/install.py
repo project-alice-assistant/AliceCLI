@@ -42,7 +42,7 @@ from AliceCli.utils.utils import reboot, systemLogs
 @click.pass_context
 @checkConnection
 def installSoundDevice(ctx: click.Context, device: str):
-	click.secho('Installing audio hardware', color='yellow')
+	click.secho('Installing audio hardware', fg='yellow')
 	commons.waitAnimation()
 	if not device:
 		device = getDeviceName(ctx)
@@ -67,7 +67,7 @@ def installSoundDevice(ctx: click.Context, device: str):
 @click.pass_context
 @checkConnection
 def uninstallSoundDevice(ctx: click.Context, device: str, return_to_main_menu: bool = True):  # NOSONAR
-	click.secho('Uninstalling audio hardware', color='yellow')
+	click.secho('Uninstalling audio hardware', fg='yellow')
 	commons.waitAnimation()
 	if not device:
 		device = getDeviceName(ctx)
@@ -107,7 +107,7 @@ def getDeviceName(ctx: click.Context) -> str:
 @click.pass_context
 @checkConnection
 def installAlice(ctx: click.Context, force: bool):
-	click.secho('\nInstalling Alice, yayyyy!', color='yellow')
+	click.secho('\nInstalling Alice, yayyyy!', fg='yellow')
 
 	result = sshCmdWithReturn('test -d ~/ProjectAlice/ && echo "1"')[0].readline()
 	if result:
@@ -130,9 +130,11 @@ def installAlice(ctx: click.Context, force: bool):
 		{
 			'type'    : 'password',
 			'name'    : 'adminPinCode',
+			'transformer': lambda _: commons.HIDDEN,
 			'message' : 'Enter an admin pin code. It must be made of 4 characters, all digits only. (default: 1234)',
 			'default' : '1234',
-			'validate': lambda code: code.isdigit() and int(code) < 10000
+			'validate': lambda code: code.isdigit() and int(code) < 10000,
+			'invalid_message': 'Pin must be 4 numbers'
 		},
 		{
 			'type'    : 'input',
@@ -246,12 +248,14 @@ def installAlice(ctx: click.Context, force: bool):
 		},
 		{
 			'type'   : 'password',
+			'transformer': lambda _: commons.HIDDEN,
 			'message': 'Enter your AWS access key',
 			'name'   : 'awsAccessKey',
 			'when'   : lambda userAnswers: userAnswers['advancedConfigs'] and userAnswers['tts'] == 'Amazon'
 		},
 		{
 			'type'   : 'password',
+			'transformer': lambda _: commons.HIDDEN,
 			'message': 'Enter your AWS secret key',
 			'name'   : 'awsSecretKey',
 			'when'   : lambda userAnswers: userAnswers['advancedConfigs'] and userAnswers['tts'] == 'Amazon'
@@ -285,6 +289,7 @@ def installAlice(ctx: click.Context, force: bool):
 		},
 		{
 			'type'   : 'password',
+			'transformer': lambda _: commons.HIDDEN,
 			'message': 'Enter your Github access token. This is used for skill development',
 			'name'   : 'githubToken',
 			'when'   : lambda userAnswers: userAnswers['advancedConfigs'] and userAnswers['githubUsername']
@@ -385,12 +390,10 @@ def installAlice(ctx: click.Context, force: bool):
 	commons.printInfo('Cloning Alice')
 	sshCmd('git clone https://github.com/project-alice-assistant/ProjectAlice.git ~/ProjectAlice')
 
-	#sshCmd('sudo rm ~/ProjectAlice/ProjectAlice.yaml')
 	sftp = commons.SSH.open_sftp()
 	sftp.put(str(confFile), '/home/pi/ProjectAlice/ProjectAlice.yaml')
 	sftp.close()
 
-	#sshCmd(f'echo "{confFile.read_text()}" > ~/ProjectAlice/ProjectAlice.yaml', hide=True)
 	sshCmd('sudo rm /boot/ProjectAlice.yaml')
 	sshCmd('sudo cp ~/ProjectAlice/ProjectAlice.yaml /boot/ProjectAlice.yaml')
 
@@ -455,7 +458,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 		if destination.exists():
 			commons.printInfo(f'Skipping download, using existing: {destination}')
 		else:
-			commons.printInfo("Downloading...")
+			commons.printInfo('Downloading...')
 			doDownload(url=url, destination=destination)
 
 		if operatingSystem == 'windows':
@@ -469,7 +472,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 			commons.printInfo(f'Extracting {destination} to {executablePath.name}...')
 			archive = zipfile.ZipFile(destination)
 			archive.extractall()  # extract to ./balena-cli/ i.e. sub dir of working directory.
-			commons.printInfo('Setting ./balena-cli/belena as executable...')
+			commons.printInfo('Setting ./balena-cli/balena as executable...')
 			# set executable permission
 			# from https://stackoverflow.com/questions/12791997/how-do-you-do-a-simple-chmod-x-from-within-python
 			executablePath.chmod(509)  # now shell `./balena-cli/balena version` works
@@ -549,6 +552,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 		},
 		{
 			'type'   : 'password',
+			'transformer': lambda _: commons.HIDDEN,
 			'name'   : 'password',
 			'message': 'Enter your Wifi network\'s key'
 		},

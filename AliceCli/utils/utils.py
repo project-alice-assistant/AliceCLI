@@ -18,9 +18,11 @@
 #  Last modified: 2021.03.04 at 17:03:56 CET
 #  Last modified by: Psycho
 
-import click
 import time
-from InquirerPy import prompt
+
+import click
+from InquirerPy import inquirer, prompt
+from InquirerPy.validator import PasswordValidator
 
 from AliceCli.utils import commons
 from AliceCli.utils.decorators import checkConnection
@@ -32,43 +34,50 @@ from AliceCli.utils.decorators import checkConnection
 @click.pass_context
 @checkConnection
 def changePassword(ctx: click.Context, current_password: str = None, password: str = None):
-	click.secho('Changing password', color='yellow')
+	click.secho('Changing password', fg='yellow')
 
 	if not password or not current_password:
-		questions = [
-			{
-				'type'    : 'password',
-				'name'    : 'cpassword',
-				'message' : 'Enter current password (default: raspberry)',
-				'default' : 'raspberry',
-				'validate': lambda pwd: len(pwd) > 0
-			},
-			{
-				'type'    : 'password',
-				'name'    : 'npassword',
-				'message' : 'Enter new password',
-				'validate': lambda pwd: len(pwd) > 0
-			},
-			{
-				'type'    : 'password',
-				'name'    : 'npassword2',
-				'message' : 'Confirm new password',
-				'validate': lambda pwd: len(pwd) > 0
-			}
-		]
+		retry = True
+		while retry:
+			questions = [
+				{
+					'type'    : 'password',
+					'name'    : 'cpassword',
+					'transformer': lambda _: commons.HIDDEN,
+					'message' : 'Enter current password (default: raspberry)',
+					'default' : 'raspberry'
+				},
+				{
+					'type'    : 'password',
+					'name'    : 'npassword',
+					'transformer': lambda _: commons.HIDDEN,
+					'message' : 'Enter new password',
+					'validate': PasswordValidator(length=8, cap=True, number=True, special=False),
+					'long_instruction': 'Password must be at least 8 characters long, contain a number and a capital letter. All this.... for your safety!'
+				},
+				{
+					'type'    : 'password',
+					'name'    : 'npassword2',
+					'transformer': lambda _: commons.HIDDEN,
+					'message' : 'Confirm new password'
+				}
+			]
 
-		answers = prompt(questions=questions)
+			answers = prompt(questions=questions)
 
-		if not answers:
-			commons.returnToMainMenu(ctx)
+			if not answers:
+				commons.returnToMainMenu(ctx)
 
-		if answers['npassword'] != answers['npassword2']:
-			commons.printError('New passwords do not match')
-			commons.returnToMainMenu(ctx, pause=True)
-			return
-
-		current_password = answers['cpassword']
-		password = answers['npassword']
+			if answers['npassword'] != answers['npassword2']:
+				commons.printError('New passwords do not match')
+				retry = inquirer.confirm(message='Try again?', default=True).execute()
+				if not retry:
+					commons.returnToMainMenu(ctx)
+					return
+			else:
+				current_password = answers['cpassword']
+				password = answers['npassword']
+				break
 
 	commons.waitAnimation()
 	stdin, stdout, stderr = commons.SSH.exec_command(f'echo -e "{current_password}\n{password}\n{password}" | passwd')
@@ -87,7 +96,7 @@ def changePassword(ctx: click.Context, current_password: str = None, password: s
 @click.pass_context
 @checkConnection
 def changeHostname(ctx: click.Context, hostname: str):
-	click.secho('Changing device\'s hostname', color='yellow')
+	click.secho('Changing device\'s hostname', fg='yellow')
 
 	if not hostname:
 		question = [
@@ -126,7 +135,7 @@ def changeHostname(ctx: click.Context, hostname: str):
 @click.pass_context
 @checkConnection
 def reboot(ctx: click.Context, return_to_main_menu: bool = True):  # NOSONAR
-	click.secho('Rebooting device, please wait', color='yellow')
+	click.secho('Rebooting device, please wait', fg='yellow')
 
 	commons.waitAnimation()
 	commons.SSH.exec_command('sudo reboot')
@@ -157,13 +166,13 @@ def reboot(ctx: click.Context, return_to_main_menu: bool = True):  # NOSONAR
 @click.pass_context
 @checkConnection
 def updateSystem(ctx: click.Context):
-	click.secho('Updating device\'s system, please wait', color='yellow')
+	click.secho('Updating device\'s system, please wait', fg='yellow')
 
 	commons.waitAnimation()
 	stdin, stdout, stderr = commons.SSH.exec_command('sudo apt-get update && sudo apt-get upgrade -y')
 	line = stdout.readline()
 	while line:
-		click.secho(line, nl=False, color='yellow')
+		click.secho(line, nl=False, fg='yellow')
 		line = stdout.readline()
 
 	commons.printSuccess('Device updated!')
@@ -174,13 +183,13 @@ def updateSystem(ctx: click.Context):
 @click.pass_context
 @checkConnection
 def upgradeSystem(ctx: click.Context):
-	click.secho('Upgrading device\'s system, please wait', color='yellow')
+	click.secho('Upgrading device\'s system, please wait', fg='yellow')
 
 	commons.waitAnimation()
 	stdin, stdout, stderr = commons.SSH.exec_command('sudo apt-get update && sudo apt-get dist-upgrade -y')
 	line = stdout.readline()
 	while line:
-		click.secho(line, nl=False, color='yellow')
+		click.secho(line, nl=False, fg='yellow')
 		line = stdout.readline()
 
 	commons.printSuccess('Device upgraded!')

@@ -28,14 +28,14 @@ from AliceCli.utils.decorators import checkConnection
 @click.pass_context
 @checkConnection
 def updateAlice(ctx: click.Context):
-	click.secho('Updating Alice, please wait', color='yellow')
+	click.secho('Updating Alice, please wait', fg='yellow')
 
 	commons.waitAnimation()
 	commons.SSH.exec_command('sudo systemctl stop ProjectAlice')
 	stdin, stdout, stderr = commons.SSH.exec_command('cd ~/ProjectAlice && git pull && git submodules foreach git pull')
 	line = stdout.readline()
 	while line:
-		click.secho(line, nl=False, color='yellow')
+		click.secho(line, nl=False, fg='yellow')
 		line = stdout.readline()
 
 	commons.SSH.exec_command('sudo systemctl start ProjectAlice')
@@ -48,13 +48,13 @@ def updateAlice(ctx: click.Context):
 @click.pass_context
 @checkConnection
 def systemctl(ctx: click.Context, option: str):
-	click.secho(f'Service "{option}", please wait', color='yellow')
+	click.secho(f'Service "{option}", please wait', fg='yellow')
 
 	commons.waitAnimation()
 	stdin, stdout, stderr = commons.SSH.exec_command(f'sudo systemctl {option} ProjectAlice')
 	line = stdout.readline()
 	while line:
-		click.secho(line, nl=False, color='yellow')
+		click.secho(line, nl=False, fg='yellow')
 		line = stdout.readline()
 
 	commons.printSuccess('Done!')
@@ -65,11 +65,11 @@ def systemctl(ctx: click.Context, option: str):
 @click.pass_context
 @checkConnection
 def reportBug(ctx: click.Context):
-	click.secho('Enabling inbuilt bug reporter', color='yellow')
+	click.secho('Enabling inbuilt bug reporter', fg='yellow')
 
 	commons.waitAnimation()
 	commons.SSH.exec_command('touch ~/ProjectAlice/alice.bugreport')
-	click.secho('Restarting Alice', color='yellow')
+	click.secho('Restarting Alice', fg='yellow')
 	commons.SSH.exec_command('sudo systemctl restart ProjectAlice')
 
 	commons.printSuccess('Bug reporter enabled and Alice restart. As soon as a fatal error occurs and/or she is stopped, the session report will be posted to Github!')
