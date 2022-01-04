@@ -20,10 +20,9 @@
 import re
 import subprocess
 import sys
-from typing import Callable
 
 import click
-from InquirerPy import prompt
+from InquirerPy import inquirer
 from InquirerPy.base.control import Choice
 from InquirerPy.separator import Separator
 
@@ -71,49 +70,36 @@ def mainMenu(ctx: click.Context):
 	else:
 		click.echo(f'Project Alice CLI version {VERSION}\n')
 
-	menu = [
-		Choice(lambda: ctx.invoke(discover), name='Discover devices on network'),
-		Choice(lambda: ctx.invoke(connect), name='Connect to a device'),
-		Separator(),
-		Choice(lambda: ctx.invoke(prepareSdCard), name='Prepare your SD card'),
-		Choice(lambda: ctx.invoke(changePassword), name='Change device\'s password'),
-		Choice(lambda: ctx.invoke(changeHostname), name='Set device\'s name'),
-		Choice(lambda: ctx.invoke(installSoundDevice), name='Install your sound device'),
-		Choice(lambda: ctx.invoke(soundTest), name='Sound test'),
-		Choice(lambda: ctx.invoke(installAlice), name='Install Alice'),
-		Separator(),
-		Choice(lambda: ctx.invoke(systemctl, option='start'), name='Start Alice'),
-		Choice(lambda: ctx.invoke(systemctl, option='restart'), name='Restart Alice'),
-		Choice(lambda: ctx.invoke(systemctl, option='stop'), name='Stop Alice'),
-		Choice(lambda: ctx.invoke(systemctl, option='enable'), name='Enable Alice service'),
-		Choice(lambda: ctx.invoke(systemctl, option='disable'), name='Disable Alice service'),
-		Separator(),
-		Choice(lambda: ctx.invoke(updateAlice), name='Update Alice'),
-		Choice(lambda: ctx.invoke(updateSystem), name='Update system'),
-		Choice(lambda: ctx.invoke(upgradeSystem), name='Upgrade system'),
-		Choice(lambda: ctx.invoke(reboot), name='Reboot device'),
-		Choice(lambda: ctx.invoke(uninstallSoundDevice), name='Uninstall your sound device'),
-		Choice(lambda: ctx.invoke(reportBug), name='Enable bug report for next session'),
-		Choice(lambda: ctx.invoke(aliceLogs), name='Check Alice logs'),
-		Choice(lambda: ctx.invoke(systemLogs), name='Check system logs'),
-		Choice(lambda: sys.exit(0), name='Exit')
-	]
-
-	answers = prompt(
-		questions=[
-			{
-				'type'   : 'list',
-				'name'   : 'mainMenu',
-				'message': 'Please select an option',
-				'choices': menu
-			}
+	action = inquirer.select(
+		message='Please select an option',
+		default=None,
+	    choices=[
+			Choice(lambda: ctx.invoke(discover), name='Discover devices on network'),
+			Choice(lambda: ctx.invoke(connect), name='Connect to a device'),
+			Separator(),
+			Choice(lambda: ctx.invoke(prepareSdCard), name='Prepare your SD card'),
+			Choice(lambda: ctx.invoke(changePassword), name='Change device\'s password'),
+			Choice(lambda: ctx.invoke(changeHostname), name='Set device\'s name'),
+			Choice(lambda: ctx.invoke(installSoundDevice), name='Install your sound device'),
+			Choice(lambda: ctx.invoke(soundTest), name='Sound test'),
+			Choice(lambda: ctx.invoke(installAlice), name='Install Alice'),
+			Separator(),
+			Choice(lambda: ctx.invoke(systemctl, option='start'), name='Start Alice'),
+			Choice(lambda: ctx.invoke(systemctl, option='restart'), name='Restart Alice'),
+			Choice(lambda: ctx.invoke(systemctl, option='stop'), name='Stop Alice'),
+			Choice(lambda: ctx.invoke(systemctl, option='enable'), name='Enable Alice service'),
+			Choice(lambda: ctx.invoke(systemctl, option='disable'), name='Disable Alice service'),
+			Separator(),
+			Choice(lambda: ctx.invoke(updateAlice), name='Update Alice'),
+			Choice(lambda: ctx.invoke(updateSystem), name='Update system'),
+			Choice(lambda: ctx.invoke(upgradeSystem), name='Upgrade system'),
+			Choice(lambda: ctx.invoke(reboot), name='Reboot device'),
+			Choice(lambda: ctx.invoke(uninstallSoundDevice), name='Uninstall your sound device'),
+			Choice(lambda: ctx.invoke(reportBug), name='Enable bug report for next session'),
+			Choice(lambda: ctx.invoke(aliceLogs), name='Check Alice logs'),
+			Choice(lambda: ctx.invoke(systemLogs), name='Check system logs'),
+			Choice(lambda: sys.exit(0), name='Exit')
 		]
-	)
+	).execute()
 
-	if not answers:
-		sys.exit(0)
-
-	# noinspection PyTypeChecker
-	func: Callable = answers['mainMenu']
-	func()
-	ctx.invoke(mainMenu)
+	action()
