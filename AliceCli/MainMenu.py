@@ -20,9 +20,11 @@
 import re
 import subprocess
 import sys
+from typing import Callable
 
 import click
 from InquirerPy import prompt
+from InquirerPy.base.control import Choice
 from InquirerPy.separator import Separator
 
 from AliceCli.Version import Version
@@ -69,39 +71,41 @@ def mainMenu(ctx: click.Context):
 	else:
 		click.echo(f'Project Alice CLI version {VERSION}\n')
 
+	menu = [
+		Choice(lambda: ctx.invoke(discover), name='Discover devices on network'),
+		Choice(lambda: ctx.invoke(connect), name='Connect to a device'),
+		Separator(),
+		Choice(lambda: ctx.invoke(prepareSdCard), name='Prepare your SD card'),
+		Choice(lambda: ctx.invoke(changePassword), name='Change device\'s password'),
+		Choice(lambda: ctx.invoke(changeHostname), name='Set device\'s name'),
+		Choice(lambda: ctx.invoke(installSoundDevice), name='Install your sound device'),
+		Choice(lambda: ctx.invoke(soundTest), name='Sound test'),
+		Choice(lambda: ctx.invoke(installAlice), name='Install Alice'),
+		Separator(),
+		Choice(lambda: ctx.invoke(systemctl, option='start'), name='Start Alice'),
+		Choice(lambda: ctx.invoke(systemctl, option='restart'), name='Restart Alice'),
+		Choice(lambda: ctx.invoke(systemctl, option='stop'), name='Stop Alice'),
+		Choice(lambda: ctx.invoke(systemctl, option='enable'), name='Enable Alice service'),
+		Choice(lambda: ctx.invoke(systemctl, option='disable'), name='Disable Alice service'),
+		Separator(),
+		Choice(lambda: ctx.invoke(updateAlice), name='Update Alice'),
+		Choice(lambda: ctx.invoke(updateSystem), name='Update system'),
+		Choice(lambda: ctx.invoke(upgradeSystem), name='Upgrade system'),
+		Choice(lambda: ctx.invoke(reboot), name='Reboot device'),
+		Choice(lambda: ctx.invoke(uninstallSoundDevice), name='Uninstall your sound device'),
+		Choice(lambda: ctx.invoke(reportBug), name='Enable bug report for next session'),
+		Choice(lambda: ctx.invoke(aliceLogs), name='Check Alice logs'),
+		Choice(lambda: ctx.invoke(systemLogs), name='Check system logs'),
+		Choice(lambda: sys.exit(0), name='Exit')
+	]
+
 	answers = prompt(
 		questions=[
 			{
 				'type'   : 'list',
 				'name'   : 'mainMenu',
 				'message': 'Please select an option',
-				'choices': [
-					'Discover devices on network',
-					'Connect to a device',
-					Separator(),
-					'Prepare your SD card',
-					'Change device\'s password',
-					'Set device\'s name',
-					'Install your sound device',
-					'Sound test',
-					'Install Alice',
-					Separator(),
-					'Start Alice',
-					'Restart Alice',
-					'Stop Alice',
-					'Enable Alice service',
-					'Disable Alice service',
-					Separator(),
-					'Update Alice',
-					'Update system',
-					'Upgrade system',
-					'Reboot device',
-					'Uninstall your sound device',
-					'Enable bug report for next session',
-					'Check Alice logs',
-					'Check system logs',
-					'Exit'
-				]
+				'choices': menu
 			}
 		]
 	)
@@ -109,49 +113,7 @@ def mainMenu(ctx: click.Context):
 	if not answers:
 		sys.exit(0)
 
-	if answers['mainMenu'] == 'Exit':
-		sys.exit(0)
-	elif answers['mainMenu'] == 'Discover devices on network':
-		ctx.invoke(discover)
-	elif answers['mainMenu'] == 'Connect to a device':
-		ctx.invoke(connect)
-	elif answers['mainMenu'] == 'Reboot device':
-		ctx.invoke(reboot)
-	elif answers['mainMenu'] == 'Update system':
-		ctx.invoke(updateSystem)
-	elif answers['mainMenu'] == 'Upgrade system':
-		ctx.invoke(upgradeSystem)
-	elif answers['mainMenu'] == 'Sound test':
-		ctx.invoke(soundTest)
-	elif answers['mainMenu'] == 'Update Alice':
-		ctx.invoke(updateAlice)
-	elif answers['mainMenu'] == 'Restart Alice':
-		ctx.invoke(systemctl, option='restart')
-	elif answers['mainMenu'] == 'Start Alice':
-		ctx.invoke(systemctl, option='start')
-	elif answers['mainMenu'] == 'Stop Alice':
-		ctx.invoke(systemctl, option='stop')
-	elif answers['mainMenu'] == 'Enable Alice service':
-		ctx.invoke(systemctl, option='enable')
-	elif answers['mainMenu'] == 'Disable Alice service':
-		ctx.invoke(systemctl, option='disable')
-	elif answers['mainMenu'] == 'Install Alice':
-		ctx.invoke(installAlice)
-	elif answers['mainMenu'] == 'Install your sound device':
-		ctx.invoke(installSoundDevice)
-	elif answers['mainMenu'] == 'Uninstall your sound device':
-		ctx.invoke(uninstallSoundDevice)
-	elif answers['mainMenu'] == 'Prepare your SD card':
-		ctx.invoke(prepareSdCard)
-	elif answers['mainMenu'] == 'Change device\'s password':
-		ctx.invoke(changePassword)
-	elif answers['mainMenu'] == 'Set device\'s name':
-		ctx.invoke(changeHostname)
-	elif answers['mainMenu'] == 'Check Alice logs':
-		ctx.invoke(aliceLogs)
-	elif answers['mainMenu'] == 'Check system logs':
-		ctx.invoke(systemLogs)
-	elif answers['mainMenu'] == 'Enable bug report for next session':
-		ctx.invoke(reportBug)
-	else:
-		ctx.invoke(mainMenu)
+	# noinspection PyTypeChecker
+	func: Callable = answers['mainMenu']
+	func()
+	ctx.invoke(mainMenu)

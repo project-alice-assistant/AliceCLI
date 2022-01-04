@@ -128,12 +128,12 @@ def installAlice(ctx: click.Context, force: bool):
 
 	questions = [
 		{
-			'type'    : 'password',
-			'name'    : 'adminPinCode',
-			'transformer': lambda _: commons.HIDDEN,
-			'message' : 'Enter an admin pin code. It must be made of 4 characters, all digits only. (default: 1234)',
-			'default' : '1234',
-			'validate': lambda code: code.isdigit() and int(code) < 10000,
+			'type'           : 'password',
+			'name'           : 'adminPinCode',
+			'transformer'    : lambda _: commons.HIDDEN,
+			'message'        : 'Enter an admin pin code. It must be made of 4 characters, all digits only. (default: 1234)',
+			'default'        : '1234',
+			'validate'       : lambda code: code.isdigit() and int(code) < 10000,
 			'invalid_message': 'Pin must be 4 numbers'
 		},
 		{
@@ -247,18 +247,18 @@ def installAlice(ctx: click.Context, force: bool):
 			'when'   : lambda userAnswers: userAnswers['advancedConfigs']
 		},
 		{
-			'type'   : 'password',
+			'type'       : 'password',
 			'transformer': lambda _: commons.HIDDEN,
-			'message': 'Enter your AWS access key',
-			'name'   : 'awsAccessKey',
-			'when'   : lambda userAnswers: userAnswers['advancedConfigs'] and userAnswers['tts'] == 'Amazon'
+			'message'    : 'Enter your AWS access key',
+			'name'       : 'awsAccessKey',
+			'when'       : lambda userAnswers: userAnswers['advancedConfigs'] and userAnswers['tts'] == 'Amazon'
 		},
 		{
-			'type'   : 'password',
+			'type'       : 'password',
 			'transformer': lambda _: commons.HIDDEN,
-			'message': 'Enter your AWS secret key',
-			'name'   : 'awsSecretKey',
-			'when'   : lambda userAnswers: userAnswers['advancedConfigs'] and userAnswers['tts'] == 'Amazon'
+			'message'    : 'Enter your AWS secret key',
+			'name'       : 'awsSecretKey',
+			'when'       : lambda userAnswers: userAnswers['advancedConfigs'] and userAnswers['tts'] == 'Amazon'
 		},
 		{
 			'type'   : 'input',
@@ -288,11 +288,11 @@ def installAlice(ctx: click.Context, force: bool):
 			'when'   : lambda userAnswers: userAnswers['advancedConfigs']
 		},
 		{
-			'type'   : 'password',
+			'type'       : 'password',
 			'transformer': lambda _: commons.HIDDEN,
-			'message': 'Enter your Github access token. This is used for skill development',
-			'name'   : 'githubToken',
-			'when'   : lambda userAnswers: userAnswers['advancedConfigs'] and userAnswers['githubUsername']
+			'message'    : 'Enter your Github access token. This is used for skill development',
+			'name'       : 'githubToken',
+			'when'       : lambda userAnswers: userAnswers['advancedConfigs'] and userAnswers['githubUsername']
 		},
 		{
 			'type'   : 'confirm',
@@ -416,7 +416,6 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 	flasherAvailable = Path(balenaExecutablePath).exists()
 	downloadsPath = Path.home() / 'Downloads'
 
-
 	questions = [
 		{
 			'type'   : 'confirm',
@@ -495,22 +494,22 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 
 		images.append('https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2021-05-28/2021-05-07-raspios-buster-armhf-lite.zip')
 
-		# Deactivated for now, we enforce Buster only!
-		# directories = list()
-		# Get a list of available images online
-		# url = 'https://downloads.raspberrypi.org/raspios_lite_armhf/images/'
-		# page = requests.get(url)
-		# if page.status_code == 200:
-		# 	soup = BeautifulSoup(page.text, features='html.parser')
-		# 	directories = [url + node.get('href') for node in soup.find_all('a') if node.get('href').endswith('/')]
-		# 	if directories:
-		# 		directories.pop(0)  # This is the return link, remove it...
-		#
-		# for directory in directories:
-		# 	page = requests.get(directory)
-		# 	if page.status_code == 200:
-		# 		soup = BeautifulSoup(page.text, features='html.parser')
-		# 		images.extend([directory + node.get('href') for node in soup.find_all('a') if node.get('href').endswith('.zip')])
+	# Deactivated for now, we enforce Buster only!
+	# directories = list()
+	# Get a list of available images online
+	# url = 'https://downloads.raspberrypi.org/raspios_lite_armhf/images/'
+	# page = requests.get(url)
+	# if page.status_code == 200:
+	# 	soup = BeautifulSoup(page.text, features='html.parser')
+	# 	directories = [url + node.get('href') for node in soup.find_all('a') if node.get('href').endswith('/')]
+	# 	if directories:
+	# 		directories.pop(0)  # This is the return link, remove it...
+	#
+	# for directory in directories:
+	# 	page = requests.get(directory)
+	# 	if page.status_code == 200:
+	# 		soup = BeautifulSoup(page.text, features='html.parser')
+	# 		images.extend([directory + node.get('href') for node in soup.find_all('a') if node.get('href').endswith('.zip')])
 
 	commons.printInfo('Checking for available SD card drives, please wait....')
 	drives = dict()
@@ -551,10 +550,10 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 			'validate': lambda c: len(c) > 0
 		},
 		{
-			'type'   : 'password',
+			'type'       : 'password',
 			'transformer': lambda _: commons.HIDDEN,
-			'name'   : 'password',
-			'message': 'Enter your Wifi network\'s key'
+			'name'       : 'password',
+			'message'    : 'Enter your Wifi network\'s key'
 		},
 		{
 			'type'    : 'input',

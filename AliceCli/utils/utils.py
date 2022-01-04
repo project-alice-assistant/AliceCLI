@@ -41,25 +41,25 @@ def changePassword(ctx: click.Context, current_password: str = None, password: s
 		while retry:
 			questions = [
 				{
-					'type'    : 'password',
-					'name'    : 'cpassword',
+					'type'       : 'password',
+					'name'       : 'cpassword',
 					'transformer': lambda _: commons.HIDDEN,
-					'message' : 'Enter current password (default: raspberry)',
-					'default' : 'raspberry'
+					'message'    : 'Enter current password (default: raspberry)',
+					'default'    : 'raspberry'
 				},
 				{
-					'type'    : 'password',
-					'name'    : 'npassword',
-					'transformer': lambda _: commons.HIDDEN,
-					'message' : 'Enter new password',
-					'validate': PasswordValidator(length=8, cap=True, number=True, special=False),
+					'type'            : 'password',
+					'name'            : 'npassword',
+					'transformer'     : lambda _: commons.HIDDEN,
+					'message'         : 'Enter new password',
+					'validate'        : PasswordValidator(length=8, cap=True, number=True, special=False),
 					'long_instruction': 'Password must be at least 8 characters long, contain a number and a capital letter. All this.... for your safety!'
 				},
 				{
-					'type'    : 'password',
-					'name'    : 'npassword2',
+					'type'       : 'password',
+					'name'       : 'npassword2',
 					'transformer': lambda _: commons.HIDDEN,
-					'message' : 'Confirm new password'
+					'message'    : 'Confirm new password'
 				}
 			]
 

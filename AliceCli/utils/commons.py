@@ -161,10 +161,10 @@ def connect(ctx: click.Context, ip_address: str, port: int, user: str, password:
 	if not keyFile and not password:
 		question = [
 			{
-				'type'   : 'password',
+				'type'       : 'password',
 				'transformer': lambda _: HIDDEN,
-				'name'   : 'password',
-				'message': 'Please enter the connection password'
+				'name'       : 'password',
+				'message'    : 'Please enter the connection password'
 			}
 		]
 
