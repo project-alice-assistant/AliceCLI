@@ -17,25 +17,24 @@
 #
 #  Last modified: 2021.03.07 at 13:31:43 CET
 #  Last modified by: Psycho
+import click
 import ctypes
 import json
 import os
+import paramiko
 import re
+import requests
 import socket
 import sys
 import time
 import uuid
-from pathlib import Path
-from threading import Event, Thread
-from typing import Optional, Tuple
-
-import click
-import paramiko
-import requests
 from InquirerPy import inquirer
 from InquirerPy.base.control import Choice
 from InquirerPy.separator import Separator
 from networkscan import networkscan
+from pathlib import Path
+from threading import Event, Thread
+from typing import Optional, Tuple
 
 from AliceCli.Version import Version
 
@@ -774,7 +773,7 @@ def sshCmd(cmd: str, hide: bool = False):
 
 	while line := stdout.readline():
 		if not hide:
-			click.secho(line, nl=False, fg='yellow')
+			click.secho(line, nl=False, fg='cyan', italic=True)  # NOSONAR
 
 
 def sshCmdWithReturn(cmd: str) -> Tuple:

@@ -17,11 +17,10 @@
 #
 #  Last modified: 2021.03.07 at 10:56:35 CET
 #  Last modified by: Psycho
+import click
 import re
 import subprocess
 import sys
-
-import click
 from InquirerPy import inquirer
 from InquirerPy.base.control import Choice
 from InquirerPy.separator import Separator
@@ -30,7 +29,7 @@ from AliceCli.Version import Version
 from AliceCli.alice.alice import reportBug, systemctl, updateAlice
 from AliceCli.install.install import installAlice, installSoundDevice, prepareSdCard, uninstallSoundDevice
 from AliceCli.utils.commons import connect, discover
-from AliceCli.utils.utils import aliceLogs, changeHostname, changePassword, reboot, soundTest, systemLogs, updateSystem, upgradeSystem
+from AliceCli.utils.utils import aliceLogs, changeHostname, changePassword, disableRespeakerLeds, reboot, soundTest, systemLogs, updateSystem, upgradeSystem
 
 
 VERSION = ''
@@ -84,21 +83,22 @@ def mainMenu(ctx: click.Context):
 			Choice(lambda: ctx.invoke(installAlice), name='Install Alice'),
 			Separator(),
 			Choice(lambda: ctx.invoke(systemctl, option='start'), name='Start Alice'),
-			Choice(lambda: ctx.invoke(systemctl, option='restart'), name='Restart Alice'),
-			Choice(lambda: ctx.invoke(systemctl, option='stop'), name='Stop Alice'),
-			Choice(lambda: ctx.invoke(systemctl, option='enable'), name='Enable Alice service'),
-			Choice(lambda: ctx.invoke(systemctl, option='disable'), name='Disable Alice service'),
-			Separator(),
-			Choice(lambda: ctx.invoke(updateAlice), name='Update Alice'),
-			Choice(lambda: ctx.invoke(updateSystem), name='Update system'),
-			Choice(lambda: ctx.invoke(upgradeSystem), name='Upgrade system'),
-			Choice(lambda: ctx.invoke(reboot), name='Reboot device'),
-			Choice(lambda: ctx.invoke(uninstallSoundDevice), name='Uninstall your sound device'),
-			Choice(lambda: ctx.invoke(reportBug), name='Enable bug report for next session'),
-			Choice(lambda: ctx.invoke(aliceLogs), name='Check Alice logs'),
-			Choice(lambda: ctx.invoke(systemLogs), name='Check system logs'),
-			Choice(lambda: sys.exit(0), name='Exit')
-		]
+		    Choice(lambda: ctx.invoke(systemctl, option='restart'), name='Restart Alice'),
+		    Choice(lambda: ctx.invoke(systemctl, option='stop'), name='Stop Alice'),
+		    Choice(lambda: ctx.invoke(systemctl, option='enable'), name='Enable Alice service'),
+		    Choice(lambda: ctx.invoke(systemctl, option='disable'), name='Disable Alice service'),
+		    Separator(),
+		    Choice(lambda: ctx.invoke(updateAlice), name='Update Alice'),
+		    Choice(lambda: ctx.invoke(updateSystem), name='Update system'),
+		    Choice(lambda: ctx.invoke(upgradeSystem), name='Upgrade system'),
+		    Choice(lambda: ctx.invoke(reboot), name='Reboot device'),
+		    Choice(lambda: ctx.invoke(uninstallSoundDevice), name='Uninstall your sound device'),
+		    Choice(lambda: ctx.invoke(disableRespeakerLeds), name='Turn off Respeaker bright white leds'),
+		    Choice(lambda: ctx.invoke(reportBug), name='Enable bug report for next session'),
+		    Choice(lambda: ctx.invoke(aliceLogs), name='Check Alice logs'),
+		    Choice(lambda: ctx.invoke(systemLogs), name='Check system logs'),
+		    Choice(lambda: sys.exit(0), name='Exit')
+	    ]
 	).execute()
 
 	action()

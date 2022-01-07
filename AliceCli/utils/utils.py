@@ -18,9 +18,8 @@
 #  Last modified: 2021.03.04 at 17:03:56 CET
 #  Last modified by: Psycho
 
-import time
-
 import click
+import time
 from InquirerPy import inquirer
 from InquirerPy.validator import PasswordValidator
 
@@ -175,13 +174,64 @@ def upgradeSystem(ctx: click.Context):
 @click.pass_context
 @checkConnection
 def soundTest(ctx: click.Context):
-	commons.printInfo('Testing sound output...')
-	commons.waitAnimation()
-	stdin, stdout, stderr = commons.SSH.exec_command('sudo aplay /usr/share/sounds/alsa/Front_Center.wav')
-	line = stdout.readline()
-	commons.stopAnimation()
-	click.secho(line)
-	commons.printInfo('Ok, I played it and you should have heard the common "left, center" sound test')
+	commons.printInfo('This will test both the recording and playback of your device')
+	click.pause('Press enter and read aloud: I am testing my sound input and output')
+	commons.printInfo('Now recording...')
+	commons.sshCmd('arecord /tmp/test.wav -d 3')
+	time.sleep(3.5)
+	commons.printInfo('Now playing...')
+	commons.sshCmd('aplay /tmp/test.wav')
+	time.sleep(3.5)
+
+	confirm = inquirer.confirm(
+		message='Did you hear yourself speaking through the device?',
+		default=True
+	).execute()
+
+	if confirm:
+		commons.printSuccess('Great, so both your mic and speakers are working!')
+	else:
+		commons.printInfo("Ok... Sorry about that... Let's try the audio output only")
+		click.pause()
+		commons.printInfo('Testing sound output...')
+		commons.waitAnimation()
+		commons.SSH.exec_command('sudo aplay /usr/share/sounds/alsa/Front_Center.wav')
+		commons.stopAnimation()
+		confirm = inquirer.confirm(
+			message='Ok, I played it and you should have heard the common "front, center" sound test, did you hear it?',
+			default=True
+		).execute()
+
+		if confirm:
+			commons.printInfo("Ok, so this means your audio output is fine, but your mic doesn't capture anything")
+			click.pause()
+			stdin, stdout, stderr = commons.SSH.exec_command('arecord -l')
+			while line := stdout.readline():
+				click.echo(line, nl=False)
+			confirm = inquirer.confirm(
+				message='Do you see your mic listed in the list above?',
+				default=True
+			).execute()
+
+			if confirm:
+				commons.printInfo('Mmmh, here some potential fixes:\n- Use "alsamixer" to raise the capture volume of your device.\n- Edit your "/etc/asound.conf" to set it up correctly.\n- Try reaching out on our Discord server, maybe others had the same issue?')
+			else:
+				commons.printInfo('Mmmh, here some potential fixes:\n Edit your "/etc/asound.conf" to set it up correctly.\n- Try reaching out on our Discord server, maybe others had the same issue?')
+		else:
+			commons.printInfo("Ok, so this would mean the output doesn't work, and maybe the input works, but you can't hear the result...")
+			click.pause()
+			stdin, stdout, stderr = commons.SSH.exec_command('aplay -l')
+			while line := stdout.readline():
+				click.echo(line, nl=False)
+			confirm = inquirer.confirm(
+				message='Do you see your audio output device listed in the list above?',
+				default=True
+			).execute()
+			if confirm:
+				commons.printInfo('Mmmh, here some potential fixes:\n- Use "alsamixer" to raise the output volume of your device.\n- Edit your "/etc/asound.conf" to set it up correctly.\n- Try reaching out on our Discord server, maybe others had the same issue?')
+			else:
+				commons.printInfo('Mmmh, here some potential fixes:\n Edit your "/etc/asound.conf" to set it up correctly.\n- Try reaching out on our Discord server, maybe others had the same issue?')
+
 	commons.returnToMainMenu(ctx, pause=True)
 
 
@@ -210,3 +260,23 @@ def displayLogs(ctx: click.Context, file: str):
 		commons.SSH.exec_command('\r')
 
 	commons.returnToMainMenu(ctx)
+
+
+@click.command(name='disableRespeakerLeds')
+@click.pass_context
+@checkConnection
+def disableRespeakerLeds(ctx: click.Context):
+	click.echo('Turning off Respeaker always on leds')
+	commons.waitAnimation()
+	click.echo('Make sure we have pip')
+	commons.sshCmd('sudo apt-get install python3-pip -y')
+	click.echo('Install pixel ring our savior')
+	commons.sshCmd('sudo pip3 install pixel_ring')  # sudo is required here, that's bad, but we uninstall directly after
+	click.echo('Testing the leds and turning off')
+	commons.sshCmd('pixel_ring_check', hide=True)
+	time.sleep(3)
+	click.echo('Uninstall pixel ring as we don\'t need it anymore')
+	commons.sshCmd('sudo pip3 uninstall pixel_ring -y')
+	commons.stopAnimation()
+	commons.printSuccess('Should be done!')
+	commons.returnToMainMenu(ctx, pause=True)
