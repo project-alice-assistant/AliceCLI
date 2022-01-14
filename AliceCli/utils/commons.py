@@ -761,7 +761,7 @@ def validateHostname(hostname: str) -> str:
 	if len(hostname) > 253:
 		raise click.BadParameter('Hostname maximum length is 253')
 
-	allowed = re.compile(r'^([\w]*)$', re.IGNORECASE)
+	allowed = re.compile(r'^\w([\w-]*\w)?$', re.IGNORECASE)
 	if allowed.match(hostname):
 		return hostname
 	else:
