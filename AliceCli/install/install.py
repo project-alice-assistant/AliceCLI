@@ -616,6 +616,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 
 
 def doDownload(url: str, destination: Path):
+	os.makedirs(os.path.dirname(destination), exist_ok = True)
 	with destination.open(mode='wb') as f:
 		response = requests.get(url, stream=True)
 		size = int(response.headers.get('content-length'))
