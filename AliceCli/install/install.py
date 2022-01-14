@@ -494,7 +494,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 		commons.printInfo('Checking for available SD card drives, please wait....')
 		drives = list()
 
-		output = subprocess.run(balenaCommand.split(), capture_output=True, shell=True).stdout.decode()
+		output = subprocess.run(balenaCommand, capture_output=True, shell=True).stdout.decode()
 		for line in output.split('\n'):
 			if not line.startswith(driveSep):
 				continue
