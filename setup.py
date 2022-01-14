@@ -50,7 +50,8 @@ setup(
 		'pytest~=6.2.5',
 		'coverage~=6.2',
 		'pytest-cov~=3.0.0',
-		'coveralls~=3.3.1'
+		'coveralls~=3.3.1',
+		'tomli=2.0.0'
     ],
 	classifiers=[
 		"Development Status :: 5 - Production/Stable",
