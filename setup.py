@@ -25,7 +25,7 @@ from setuptools import find_packages, setup
 
 setup(
 	name='projectalice-cli',
-	version='1.2.0',
+	version='1.2.1',
 	long_description=Path('README.md').read_text(encoding='utf8'),
 	long_description_content_type='text/markdown',
 	python_requires='>=3.8',
@@ -51,7 +51,7 @@ setup(
 		'coverage~=6.2',
 		'pytest-cov~=3.0.0',
 		'coveralls~=3.3.1',
-		'tomli=2.0.0'
+		'tomli~=2.0.0'
     ],
 	classifiers=[
 		"Development Status :: 5 - Production/Stable",
