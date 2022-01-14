@@ -23,6 +23,8 @@ import time
 import zipfile
 from pathlib import Path
 from shutil import which
+import json
+import tempfile
 
 import click
 import psutil
@@ -393,9 +395,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 
 	operatingSystem = platform.system().lower()
 
-	balenaExecutablePath = which('balena')
-	if balenaExecutablePath is None and operatingSystem == 'linux':
-		balenaExecutablePath = str(Path.joinpath(Path.cwd(), 'balena-cli', 'balena'))  # default install path
+	balenaExecutablePath = getBalenaPath()
 
 	flasherAvailable = Path(balenaExecutablePath).exists()
 	downloadsPath = Path.home() / 'Downloads'
@@ -406,16 +406,16 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 	).execute()
 
 	installBalena = False
-	if doFlash and not flasherAvailable:
+	if not flasherAvailable:
 		installBalena = inquirer.confirm(
-			message='balena-cli was not found on your system. It is required for flashing SD cards, do you want to install it?',
+			message='balena-cli was not found on your system. It is required for working with SD cards, do you want to install it?',
 			default=True
 		)
 
-	if doFlash and not flasherAvailable and not installBalena:
-		commons.returnToMainMenu(ctx, pause=True, message='Well then, I cannot flash your SD card without the appropriate tool to do it')
+	if not flasherAvailable and not installBalena:
+		commons.returnToMainMenu(ctx, pause=True, message='Well then, I cannot work with your SD card without the appropriate tool to do it')
 		return
-	elif doFlash and not flasherAvailable and installBalena:
+	elif not flasherAvailable and installBalena:
 		commons.printInfo('Installing Balena-cli, please wait...')
 		balenaVersion = 'v13.1.1'
 		if operatingSystem == 'windows':
@@ -495,11 +495,9 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 		drives = list()
 
 		output = subprocess.run(balenaCommand, capture_output=True, shell=True).stdout.decode()
-		for line in output.split('\n'):
-			if not line.startswith(driveSep):
-				continue
-
-			drives.append(Choice(line.split(' ')[0], name=line))
+		sd_cards = getSdCards()
+		for sd_card in sd_cards:
+			drives.append(Choice(sd_card, name=sd_card))
 
 		if not drives:
 			commons.returnToMainMenu(ctx, pause=True, message='Please insert your SD card first')
@@ -560,17 +558,23 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 		# e.g. on /dev/sda drive /dev/sda1 is "boot" and /dev/sda2 is "rootfs"
 		# Lookup up the boot mount point path via lsblk
 
-		command = f'sudo lsblk --noheadings --list {drive}'
+		sd_cards = getSdCards()
+		command = f'sudo lsblk -o PATH,FSTYPE,LABEL,MOUNTPOINT --json'
 		output = subprocess.run(command, capture_output=True, shell=True).stdout.decode()
-		for line in output.split('\n'):
-			mountPoint = line.split(' ')[-1]
-			if not mountPoint.startswith(driveSep):
-				continue
-			drive = mountPoint
-			break  # just take the first one
-		if not drive or not Path(drive).exists():
+		blk_devices = json.loads(output)
+		for device in blk_devices["blockdevices"]:
+			if device["path"].startswith(tuple(sd_cards)) and device["fstype"] == "vfat" and device["label"] == "boot":
+				drives.append(Choice(value=device, name=device['path']))
+
+		if len(drives) == 0:
 			commons.printError(f'For some reason I cannot find the SD boot partition mount point {drive}.')
 			commons.returnToMainMenu(ctx, pause=True, message="I'm really sorry, but I just can't continue without this info, sorry for wasting your time...")
+
+		if len(drives) == 1:
+			device = drives[0].value
+			commons.printInfo(f'Auto-selected {device["path"]}.')
+			drive = device
+
 	else:
 		j = 0
 		while len(drives) <= 0:
@@ -591,9 +595,26 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 
 	if not drive:
 		drive = inquirer.select(
-			message='Please select the SD `boot` partition',
+			message='Please select the correct SD `boot` partition',
 			choices=drives
 		).execute()
+
+	need_to_unmount = False
+	if operatingSystem == 'linux':
+		# if device has not been mounted yet, mount in temp directory
+		if drive["mountpoint"] is None:
+			need_to_unmount = True
+			mount_dir = tempfile.mkdtemp(prefix="alice-cli-mount-")
+			command = f"sudo mount {drive['path']} {mount_dir}"
+			result = subprocess.run(command, capture_output=True, shell=True)
+			if not result.returncode == 0:
+			    commons.printError(f"Could not mount {drive['path']} to {mount_dir}.")
+			    commons.returnToMainMenu(ctx, pause=True)
+			drive["mountpoint"] = mount_dir
+			commons.printInfo(f"Mounted {drive['path']} to {mount_dir} temporarily.")
+		else:
+			commons.printInfo(f"{drive['path']} is already mounted to {drive['mountpoint']}.")
+		drive = drive["mountpoint"]
 
 	# Now let's enable SSH and Wi-Fi on boot.
 	commons.printInfo('Adding ssh & wifi to SD boot....')
@@ -612,6 +633,16 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 	content += '}'
 	Path(drive, 'wpa_supplicant.conf').write_text(content)
 
+	if need_to_unmount:
+			command = f"sudo umount {drive}"
+			result = subprocess.run(command, capture_output=True, shell=True)
+			if not result.returncode == 0:
+			    commons.printError(f"Could not unmount {drive}.")
+			    commons.returnToMainMenu(ctx, pause=True)
+			commons.printInfo(f"Unmounted {drive}")
+			# only deletes empty dirs, so if unmounting failed for whatever reasons, we don't destroy anything
+			os.rmdir(mount_dir)
+
 	commons.returnToMainMenu(ctx, pause=True, message='SD card is ready. Please plug it in your device and boot it!')
 
 
@@ -625,3 +656,29 @@ def doDownload(url: str, destination: Path):
 			for data in response.iter_content(chunk_size=4096):
 				f.write(data)
 				progress.update(len(data))
+def getSdCards():
+	operatingSystem = platform.system().lower()
+	if operatingSystem == 'linux':
+		balenaExecutablePath = getBalenaPath()
+		balenaCommand = f'{balenaExecutablePath} util available-drives'
+		driveSep = os.path.sep  # typically '/'
+	else:
+		balenaCommand = 'balena util available-drives'
+		driveSep = '\\'
+
+	drives = list()
+
+	output = subprocess.run(balenaCommand, capture_output=True, shell=True).stdout.decode()
+	for line in output.split('\n'):
+		if not line.startswith(driveSep):
+			continue
+		drives.append(line.split()[0])
+
+	return drives
+
+def getBalenaPath():
+	operatingSystem = platform.system().lower()
+	balenaExecutablePath = which('balena')
+	if balenaExecutablePath is None and operatingSystem == 'linux':
+		balenaExecutablePath = str(Path.joinpath(Path.cwd(), 'balena-cli', 'balena'))  # default install path
+	return balenaExecutablePath
