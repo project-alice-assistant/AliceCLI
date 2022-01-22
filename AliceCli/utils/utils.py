@@ -65,8 +65,7 @@ def changePassword(ctx: click.Context, current_password: str = None, password: s
 				break
 
 	commons.waitAnimation()
-	stdin, stdout, stderr = commons.SSH.exec_command(f'echo -e "{current_password}\n{password}\n{password}" | passwd')
-
+	stdout, stderr = commons.sshCmdWithReturn(f'echo -e "{current_password}\n{password}\n{password}" | passwd')
 	error = stderr.readline()
 	if 'successfully' in error.lower():
 		commons.printSuccess('Password changed!')
@@ -91,12 +90,11 @@ def changeHostname(ctx: click.Context, hostname: str):
 		).execute()
 
 	commons.waitAnimation()
-	commons.SSH.exec_command(f"sudo hostnamectl set-hostname '{hostname}'")
+	commons.sshCmd(f"sudo hostnamectl set-hostname '{hostname}'")
 	ctx.invoke(reboot, ctx, return_to_main_menu=False)
 
 	commons.waitAnimation()
-	stdin, stdout, stderr = commons.SSH.exec_command('hostname')
-
+	stdout, stderr = commons.sshCmdWithReturn('hostname')
 	if stdout.readline().lower().strip() == hostname.lower().strip():
 		commons.printSuccess('Device name changed!')
 	else:
@@ -112,7 +110,7 @@ def reboot(ctx: click.Context, return_to_main_menu: bool = True):  # NOSONAR
 	click.secho('Rebooting device, please wait', fg='yellow')
 
 	commons.waitAnimation()
-	commons.SSH.exec_command('sudo reboot')
+	commons.sshCmd('sudo reboot')
 	address = commons.CONNECTED_TO
 	ctx.invoke(commons.disconnect)
 	rebooted = False
@@ -143,12 +141,7 @@ def updateSystem(ctx: click.Context):
 	click.secho('Updating device\'s system, please wait', fg='yellow')
 
 	commons.waitAnimation()
-	stdin, stdout, stderr = commons.SSH.exec_command('sudo apt-get update && sudo apt-get upgrade -y')
-	line = stdout.readline()
-	while line:
-		click.secho(line, nl=False, fg='yellow')
-		line = stdout.readline()
-
+	commons.sshCmd('sudo apt-get update && sudo apt-get upgrade -y')
 	commons.printSuccess('Device updated!')
 	commons.returnToMainMenu(ctx, pause=True)
 
@@ -160,12 +153,7 @@ def upgradeSystem(ctx: click.Context):
 	click.secho('Upgrading device\'s system, please wait', fg='yellow')
 
 	commons.waitAnimation()
-	stdin, stdout, stderr = commons.SSH.exec_command('sudo apt-get update && sudo apt-get dist-upgrade -y')
-	line = stdout.readline()
-	while line:
-		click.secho(line, nl=False, fg='yellow')
-		line = stdout.readline()
-
+	commons.sshCmd('sudo apt-get update && sudo apt-get dist-upgrade -y')
 	commons.printSuccess('Device upgraded!')
 	ctx.invoke(reboot)
 
@@ -195,7 +183,7 @@ def soundTest(ctx: click.Context):
 		click.pause()
 		commons.printInfo('Testing sound output...')
 		commons.waitAnimation()
-		commons.SSH.exec_command('sudo aplay /usr/share/sounds/alsa/Front_Center.wav')
+		commons.sshCmd('sudo aplay /usr/share/sounds/alsa/Front_Center.wav')
 		commons.stopAnimation()
 		confirm = inquirer.confirm(
 			message='Ok, I played it and you should have heard the common "front, center" sound test, did you hear it?',
@@ -205,9 +193,7 @@ def soundTest(ctx: click.Context):
 		if confirm:
 			commons.printInfo("Ok, so this means your audio output is fine, but your mic doesn't capture anything")
 			click.pause()
-			stdin, stdout, stderr = commons.SSH.exec_command('arecord -l')
-			while line := stdout.readline():
-				click.echo(line, nl=False)
+			commons.sshCmd('arecord -l')
 			confirm = inquirer.confirm(
 				message='Do you see your mic listed in the list above?',
 				default=True
@@ -220,9 +206,7 @@ def soundTest(ctx: click.Context):
 		else:
 			commons.printInfo("Ok, so this would mean the output doesn't work, and maybe the input works, but you can't hear the result...")
 			click.pause()
-			stdin, stdout, stderr = commons.SSH.exec_command('aplay -l')
-			while line := stdout.readline():
-				click.echo(line, nl=False)
+			commons.sshCmd('aplay -l')
 			confirm = inquirer.confirm(
 				message='Do you see your audio output device listed in the list above?',
 				default=True

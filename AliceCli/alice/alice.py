@@ -17,8 +17,8 @@
 #
 #  Last modified: 2021.03.03 at 13:15:43 CET
 #  Last modified by: Psycho
-
 import click
+import time
 
 from AliceCli.utils import commons
 from AliceCli.utils.decorators import checkConnection
@@ -31,14 +31,14 @@ def updateAlice(ctx: click.Context):
 	click.secho('Updating Alice, please wait', fg='yellow')
 
 	commons.waitAnimation()
-	commons.SSH.exec_command('sudo systemctl stop ProjectAlice')
-	stdin, stdout, stderr = commons.SSH.exec_command('cd ~/ProjectAlice && git pull && git submodules foreach git pull')
-	line = stdout.readline()
-	while line:
-		click.secho(line, nl=False, fg='yellow')
-		line = stdout.readline()
-
-	commons.SSH.exec_command('sudo systemctl start ProjectAlice')
+	commons.sshCmd('sudo systemctl stop ProjectAlice')
+	time.sleep(2)
+	commons.sshCmd('rm ~/ProjectAlice/requirements.hash')
+	commons.sshCmd('rm ~/ProjectAlice/sysrequirements.hash')
+	commons.sshCmd('rm ~/ProjectAlice/pipuninstalls.hash')
+	commons.sshCmd('cd ~/ProjectAlice && git pull && git submodules foreach git pull')
+	time.sleep(2)
+	commons.sshCmd('sudo systemctl start ProjectAlice')
 	commons.printSuccess('Alice updated!')
 	commons.returnToMainMenu(ctx, pause=True)
 
@@ -51,12 +51,7 @@ def systemctl(ctx: click.Context, option: str):
 	click.secho(f'Service "{option}", please wait', fg='yellow')
 
 	commons.waitAnimation()
-	stdin, stdout, stderr = commons.SSH.exec_command(f'sudo systemctl {option} ProjectAlice')
-	line = stdout.readline()
-	while line:
-		click.secho(line, nl=False, fg='yellow')
-		line = stdout.readline()
-
+	commons.sshCmd(f'sudo systemctl {option} ProjectAlice')
 	commons.printSuccess('Done!')
 	commons.returnToMainMenu(ctx, pause=True)
 
@@ -68,9 +63,9 @@ def reportBug(ctx: click.Context):
 	click.secho('Enabling inbuilt bug reporter', fg='yellow')
 
 	commons.waitAnimation()
-	commons.SSH.exec_command('touch ~/ProjectAlice/alice.bugreport')
+	commons.sshCmd('touch ~/ProjectAlice/alice.bugreport')
 	click.secho('Restarting Alice', fg='yellow')
-	commons.SSH.exec_command('sudo systemctl restart ProjectAlice')
+	commons.sshCmd('sudo systemctl restart ProjectAlice')
 
 	commons.printSuccess('Bug reporter enabled and Alice restart. As soon as a fatal error occurs and/or she is stopped, the session report will be posted to Github!')
 	commons.returnToMainMenu(ctx, pause=True)
