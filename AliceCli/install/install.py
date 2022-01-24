@@ -396,8 +396,8 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 	operatingSystem = platform.system().lower()
 
 	balenaExecutablePath = getBalenaPath()
+	flasherAvailable = balenaExecutablePath != None
 
-	flasherAvailable = Path(balenaExecutablePath).exists()
 	downloadsPath = Path.home() / 'Downloads'
 
 	doFlash = inquirer.confirm(
