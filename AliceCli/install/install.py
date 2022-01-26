@@ -180,6 +180,7 @@ def installAlice(ctx: click.Context, force: bool):
 		choices=[
 			Choice('respeaker2', name='Respeaker 2 mics'),
 			Choice('respeaker4', name='Respeaker 4 mic array'),
+			Choice('respeaker4MicLinear', name='Respeaker 4 mic linear array'),
 			Choice('respeaker6', name='Respeaker 6 mic array'),
 			Choice('respeaker7', name='Respeaker 7'),
 			Choice('respeakerCoreV2', name='Respeaker Core version 2'),
