@@ -113,17 +113,7 @@ def reboot(ctx: click.Context, return_to_main_menu: bool = True):  # NOSONAR
 	commons.sshCmd('sudo reboot')
 	address = commons.CONNECTED_TO
 	ctx.invoke(commons.disconnect)
-	rebooted = False
-	for i in range(1, 5):
-		try:
-			commons.printInfo(f'Trying to contact device, attempt {i} of 5...')
-			ctx.invoke(commons.connect, ip_address=address, return_to_main_menu=False, noExceptHandling=True)
-			if commons.SSH:
-				rebooted = True
-				break
-			time.sleep(5)
-		except:
-			pass  # Let's try again...
+	rebooted = commons.tryReconnect(ctx, address)
 
 	if not rebooted:
 		commons.printError('Failed rebooting device')
@@ -241,7 +231,15 @@ def displayLogs(ctx: click.Context, file: str):
 	try:
 		commons.sshCmd(f'tail -n 250 -f {file} & {{ read ; kill %1; }}')
 	except:
-		commons.SSH.exec_command('\r')
+		try:
+			commons.SSH.exec_command('\r')
+		except:
+			address = commons.CONNECTED_TO
+			ctx.invoke(commons.disconnect)
+			if commons.tryReconnect(ctx, address):
+				ctx.invoke(displayLogs, file)
+			else:
+				commons.printError('Connection to Alice lost')
 
 	commons.returnToMainMenu(ctx)
 

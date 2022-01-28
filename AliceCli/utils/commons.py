@@ -808,3 +808,19 @@ def getUpdateSource(definedSource: str) -> str:
 		updateSource = versions[0]
 
 	return str(updateSource)
+
+
+def tryReconnect(ctx: click.Context, address: str) -> bool:
+	rebooted = False
+	for i in range(1, 5):
+		try:
+			printInfo(f'Trying to contact device, attempt {i} of 5...')
+			ctx.invoke(connect, ip_address=address, return_to_main_menu=False, noExceptHandling=True)
+			if SSH:
+				rebooted = True
+				break
+			time.sleep(5)
+		except:
+			pass  # Let's try again...
+
+	return rebooted
