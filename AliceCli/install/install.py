@@ -102,12 +102,8 @@ def getDeviceName() -> str:
 	).execute()
 
 
-@click.command(name='installAlice')
-@click.option('--force', '-f', is_flag=True)
-@click.pass_context
-@checkConnection
-def installAlice(ctx: click.Context, force: bool):
-	click.secho('\nInstalling Alice!', fg='yellow')
+def install(ctx: click.Context, force: bool, name: str):
+	click.secho(f'\nInstalling {name}!', fg='yellow')
 
 	result = sshCmdWithReturn('test -d ~/ProjectAlice/ && echo "1"')[0].readline()
 	if result:
@@ -125,44 +121,6 @@ def installAlice(ctx: click.Context, force: bool):
 		sshCmd('sudo systemctl stop ProjectAlice')
 		sshCmd('sudo rm -rf ~/ProjectAlice')
 
-	adminPinCode = inquirer.secret(
-		message='Enter an admin pin code. It must be made of 4 characters, all digits only. (default: 1234)',
-		default='1234',
-		validate=lambda code: code.isdigit() and int(code) < 10000,
-		invalid_message='Pin must be 4 numbers',
-		transformer=lambda _: commons.HIDDEN
-	).execute()
-
-	mqttHost = inquirer.text(
-		message='Mqtt hostname',
-		default='localhost',
-		validate=EmptyInputValidator(commons.NO_EMPTY)
-	).execute()
-
-	mqttPort = inquirer.number(
-		message='Mqtt port',
-		default=1883,
-		validate=EmptyInputValidator(commons.NO_EMPTY)
-	).execute()
-
-	activeLanguage = inquirer.select(
-		message='What language should Alice be using?',
-		default='en',
-		choices=[
-			Choice('en', name='English'),
-			Choice('de', name='German'),
-			Choice('fr', name='French'),
-			Choice('it', name='Italian'),
-			Choice('pl', name='Polish'),
-		]
-	).execute()
-
-	activeCountryCode = inquirer.select(
-		message='Enter the country code to use.',
-		default='EN',
-		choices=commons.COUNTRY_CODES
-	).execute()
-
 	releaseType = inquirer.select(
 		message='What releases do you want to receive? If you are unsure, leave this to Stable releases!',
 		default='master',
@@ -174,195 +132,41 @@ def installAlice(ctx: click.Context, force: bool):
 		]
 	).execute()
 
-	audioDevice = inquirer.select(
-		message='Select your audio hardware if listed',
-		default='respeaker2',
-		choices=[
-			Choice('respeaker2', name='Respeaker 2 mics'),
-			Choice('respeaker4', name='Respeaker 4 mic array'),
-			Choice('respeaker4MicLinear', name='Respeaker 4 mic linear array'),
-			Choice('respeaker6', name='Respeaker 6 mic array'),
-			Choice('respeaker7', name='Respeaker 7'),
-			Choice('respeakerCoreV2', name='Respeaker Core version 2'),
-			Choice('googleAIY', name='Google AIY'),
-			Choice('googleAIY2', name='Google AIY 2'),
-			Choice('matrixCreator', name='Matrix Creator'),
-			Choice('matrixVoice', name='Matrix Voice'),
-			Choice('ps3eye', name='PS3 Eye'),
-			Choice('jabra410', name='Jabra 410'),
-			Choice(None)
-		]
-	).execute()
-
-	soundInstalled = inquirer.confirm(
-		message='Did you already install your sound hardware using Alice CLI or confirmed it to be working?',
-		default=False
-	).execute()
-
-	installHLC = inquirer.confirm(
-		message='Do you want to install HLC? HLC can pilot leds such as the ones on Respeakers to provide visual feedback.',
-		default=False
-	).execute()
-
-	advancedConfigs = inquirer.confirm(
-		message='Do you want to set more advanced configs? If you do, DO NOT ABORT IN THE MIDDLE!',
-		default=False
-	).execute()
-
-	asr = 'coqui'
-	tts = 'pico'
-	awsAccessKey = ''
-	awsSecretKey = ''
-	googleServiceFile = ''
-	shortReplies = False
-	devMode = False
-	githubUsername = ''
-	githubToken = ''
-	enableDataStoring = True
-	skillAutoUpdate = True
-
-	if advancedConfigs:
-		asr = inquirer.select(
-			message='Select the ASR engine you want to use',
-			default='coqui',
-			choices=[
-				Choice('coqui', name='Coqui'),
-				Choice('snips', name='Snips (English only!)'),
-				Choice('google', name='Google (Online!)'),
-				Choice('deepspeech', name='Deepspeech'),
-				Choice('pocketsphinx', name='PocketSphinx')
-			]
-		).execute()
-
-		tts = inquirer.select(
-			message='Select the TTS engine you want to use',
-			default='pico',
-			choices=[
-				Choice('pico', name='Coqui'),
-				Choice('mycroft', name='Mycroft'),
-				Choice('amazon', name='Amazon'),
-				Choice('google', name='Google'),
-				Choice('watson', name='Watson')
-			]
-		).execute()
-
-		if tts == 'amazon':
-			awsAccessKey = inquirer.secret(
-				message='Enter your AWS access key',
-				validate=EmptyInputValidator(commons.NO_EMPTY),
-				transformer=lambda _: commons.HIDDEN
-			).execute()
-
-			awsSecretKey = inquirer.secret(
-				message='Enter your AWS secret key',
-				validate=EmptyInputValidator(commons.NO_EMPTY),
-				transformer=lambda _: commons.HIDDEN
-			).execute()
-
-		if tts == 'google' or asr == 'google':
-			googleServiceFile = inquirer.filepath(
-				message='Enter your Google service file path',
-				default='~/',
-				validate=PathValidator(is_file=True, message='Input is not a file')
-			).execute()
-
-		shortReplies = inquirer.confirm(
-			message='Do you want Alice to use short replies?',
-			default=False
-		).execute()
-
-		devMode = inquirer.confirm(
-			message='Do you want to activate the developer mode?',
-			default=False
-		).execute()
-
-		if devMode:
-			githubUsername = inquirer.text(
-				message='Enter your Github username. This is required for Dev Mode.',
-				validate=EmptyInputValidator(commons.NO_EMPTY)
-			).execute()
-
-			githubToken = inquirer.secret(
-				message='Enter your Github access token. This is required for Dev Mode.',
-				validate=EmptyInputValidator(commons.NO_EMPTY),
-				transformer=lambda _: commons.HIDDEN
-			).execute()
-
-		enableDataStoring = inquirer.confirm(
-			message='Enable telemetry data storing?',
-			default=True
-		).execute()
-
-		skillAutoUpdate = inquirer.confirm(
-			message='Enable skill auto update?',
-			default=True
-		).execute()
-
 	commons.waitAnimation()
-	confFile = Path(Path.home(), '.pacli/projectalice.yaml')
+	confFile = Path(Path.home(), f'.pacli/{name}.yaml')
 	confFile.parent.mkdir(parents=True, exist_ok=True)
 
-	updateSource = commons.getUpdateSource(releaseType)
+	updateSource = commons.getUpdateSource(name, releaseType)
 
 	try:
-		with requests.get(url=f'https://raw.githubusercontent.com/project-alice-assistant/ProjectAlice/{updateSource}/ProjectAlice.yaml', stream=True) as r:
+		with requests.get(url=f'https://raw.githubusercontent.com/project-alice-assistant/{name}/{updateSource}/{name}.yaml', stream=True) as r:
 			r.raise_for_status()
 			with confFile.open('wb') as fp:
 				for chunk in r.iter_content(chunk_size=8192):
 					if chunk:
 						fp.write(chunk)
 	except Exception as e:
-		commons.printError(f'Failed downloading ProjectAlice.yaml {e}')
+		commons.printError(f'Failed downloading {name}.yaml {e}')
 		commons.returnToMainMenu(ctx, pause=True)
 
 	with confFile.open(mode='r') as f:
 		try:
-			confs = yaml.safe_load(f)
+			config = yaml.safe_load(f)
 		except yaml.YAMLError as e:
-			commons.printError(f'Failed reading projectalice.yaml {e}')
+			commons.printError(f'Failed reading {name}.yaml {e}')
 			commons.returnToMainMenu(ctx, pause=True)
 
-	confs['adminPinCode'] = str(int(adminPinCode)).zfill(4)
-	confs['mqttHost'] = mqttHost
-	confs['mqttPort'] = int(mqttPort)
-	confs['activeLanguage'] = activeLanguage
-	confs['activeCountryCode'] = activeCountryCode
-	confs['useHLC'] = installHLC
-	confs['aliceUpdateChannel'] = releaseType
-	confs['skillsUpdateChannel'] = releaseType
-	confs['ttsLanguage'] = f'{activeLanguage}-{activeCountryCode}'
-
-	if soundInstalled:
-		confs['installSound'] = False
-		if audioDevice:
-			confs['audioHardware'][audioDevice] = True
+	if name == 'ProjecAlice':
+		config = getAliceConfig(config, releaseType)
+	elif name == 'ProjectAliceSatellite':
+		config = getAliceSatConfig(config, releaseType)
 	else:
-		confs['installSound'] = True
-
-	confs['asr'] = asr
-	confs['awsAccessKey'] = awsAccessKey
-	confs['awsSecretKey'] = awsSecretKey
-	confs['tts'] = tts
-	confs['shortReplies'] = shortReplies
-	confs['devMode'] = devMode
-	confs['githubUsername'] = githubUsername
-	confs['githubToken'] = githubToken
-	confs['enableDataStoring'] = enableDataStoring
-	confs['skillAutoUpdate'] = skillAutoUpdate
-
-	if googleServiceFile and Path(googleServiceFile).exists():
-		confs['googleServiceFile'] = Path(googleServiceFile).read_text()
-
-	if asr == 'google':
-		confs['keepASROffline'] = False
-
-	if tts in ['amazon', 'google', 'watson']:
-		confs['keepTTSOffline'] = False
+		commons.printError(f'Unknown install type {name}')
 
 	with confFile.open(mode='w') as f:
-		yaml.dump(confs, f)
+		yaml.dump(config, f)
 
-	commons.printSuccess('Generated ProjectAlice.yaml')
+	commons.printSuccess(f'Generated {name}.yaml')
 
 	commons.printInfo('Updating system')
 	sshCmd('sudo apt-get update')
@@ -371,20 +175,36 @@ def installAlice(ctx: click.Context, force: bool):
 	sshCmd('git config --global user.email "anotheruser@projectalice.io"')
 
 	commons.printInfo('Cloning Alice')
-	sshCmd('git clone https://github.com/project-alice-assistant/ProjectAlice.git ~/ProjectAlice')
+	sshCmd(f'git clone https://github.com/project-alice-assistant/{name}.git ~/ProjectAlice')
 
 	sftp = commons.SSH.open_sftp()
-	sftp.put(str(confFile), '/home/pi/ProjectAlice/ProjectAlice.yaml')
+	sftp.put(str(confFile), f'/home/pi/ProjectAlice/{name}.yaml')
 	sftp.close()
 
-	sshCmd('sudo rm /boot/ProjectAlice.yaml')
-	sshCmd('sudo cp ~/ProjectAlice/ProjectAlice.yaml /boot/ProjectAlice.yaml')
+	sshCmd(f'sudo rm /boot/{name}.yaml')
+	sshCmd(f'sudo cp ~/ProjectAlice/{name}.yaml /boot/{name}.yaml')
 
 	commons.printInfo('Start install process')
 	sshCmd('cd ~/ProjectAlice/ && python3 main.py')
 
 	commons.printSuccess('Alice has completed the basic installation! She\'s now working further to complete the installation, let\'s see what she does!')
 	ctx.invoke(systemLogs)
+
+
+@click.command(name='installAlice')
+@click.option('--force', '-f', is_flag=True)
+@click.pass_context
+@checkConnection
+def installAlice(ctx: click.Context, force: bool):
+	install(ctx, force, 'ProjectAlice')
+
+
+@click.command(name='installAliceSatellite')
+@click.option('--force', '-f', is_flag=True)
+@click.pass_context
+@checkConnection
+def installAliceSatellite(ctx: click.Context, force: bool):
+	install(ctx, force, 'ProjectAliceSatellite')
 
 
 @click.command(name='prepareSdCard')
@@ -679,3 +499,236 @@ def getBalenaPath() -> str:
 		balenaExecutablePath = str(Path.joinpath(Path.cwd(), 'balena-cli', 'balena'))  # default install path
 
 	return balenaExecutablePath
+
+
+def getAliceConfig(confs, releaseType):
+	adminPinCode = inquirer.secret(
+			message='Enter an admin pin code. It must be made of 4 characters, all digits only. (default: 1234)',
+			default='1234',
+			validate=lambda code: code.isdigit() and int(code) < 10000,
+			invalid_message='Pin must be 4 numbers',
+			transformer=lambda _: commons.HIDDEN
+	).execute()
+
+	mqttHost = inquirer.text(
+			message='Mqtt hostname',
+			default='localhost',
+			validate=EmptyInputValidator(commons.NO_EMPTY)
+	).execute()
+
+	mqttPort = inquirer.number(
+			message='Mqtt port',
+			default=1883,
+			validate=EmptyInputValidator(commons.NO_EMPTY)
+	).execute()
+
+	activeLanguage = inquirer.select(
+			message='What language should Alice be using?',
+			default='en',
+			choices=[
+				Choice('en', name='English'),
+				Choice('de', name='German'),
+				Choice('fr', name='French'),
+				Choice('it', name='Italian'),
+				Choice('pl', name='Polish'),
+			]
+	).execute()
+
+	activeCountryCode = inquirer.select(
+			message='Enter the country code to use.',
+			default='EN',
+			choices=commons.COUNTRY_CODES
+	).execute()
+
+	audioDevice = inquireAudioDevice()
+
+	soundInstalled = inquirer.confirm(
+			message='Did you already install your sound hardware using Alice CLI or confirmed it to be working?',
+			default=False
+	).execute()
+
+	installHLC = inquirer.confirm(
+			message='Do you want to install HLC? HLC can pilot leds such as the ones on Respeakers to provide visual feedback.',
+			default=False
+	).execute()
+
+	advancedConfigs = inquirer.confirm(
+			message='Do you want to set more advanced configs? If you do, DO NOT ABORT IN THE MIDDLE!',
+			default=False
+	).execute()
+
+	asr = 'coqui'
+	tts = 'pico'
+	awsAccessKey = ''
+	awsSecretKey = ''
+	googleServiceFile = ''
+	shortReplies = False
+	devMode = False
+	githubUsername = ''
+	githubToken = ''
+	enableDataStoring = True
+	skillAutoUpdate = True
+
+	if advancedConfigs:
+		asr = inquirer.select(
+				message='Select the ASR engine you want to use',
+				default='coqui',
+				choices=[
+					Choice('coqui', name='Coqui'),
+					Choice('snips', name='Snips (English only!)'),
+					Choice('google', name='Google (Online!)'),
+					Choice('deepspeech', name='Deepspeech'),
+					Choice('pocketsphinx', name='PocketSphinx')
+				]
+		).execute()
+
+		tts = inquirer.select(
+				message='Select the TTS engine you want to use',
+				default='pico',
+				choices=[
+					Choice('pico', name='Coqui'),
+					Choice('mycroft', name='Mycroft'),
+					Choice('amazon', name='Amazon'),
+					Choice('google', name='Google'),
+					Choice('watson', name='Watson')
+				]
+		).execute()
+
+		if tts == 'amazon':
+			awsAccessKey = inquirer.secret(
+					message='Enter your AWS access key',
+					validate=EmptyInputValidator(commons.NO_EMPTY),
+					transformer=lambda _: commons.HIDDEN
+			).execute()
+
+			awsSecretKey = inquirer.secret(
+					message='Enter your AWS secret key',
+					validate=EmptyInputValidator(commons.NO_EMPTY),
+					transformer=lambda _: commons.HIDDEN
+			).execute()
+
+		if tts == 'google' or asr == 'google':
+			googleServiceFile = inquirer.filepath(
+					message='Enter your Google service file path',
+					default='~/',
+					validate=PathValidator(is_file=True, message='Input is not a file')
+			).execute()
+
+		shortReplies = inquirer.confirm(
+				message='Do you want Alice to use short replies?',
+				default=False
+		).execute()
+
+		devMode = inquirer.confirm(
+				message='Do you want to activate the developer mode?',
+				default=False
+		).execute()
+
+		if devMode:
+			githubUsername = inquirer.text(
+					message='Enter your Github username. This is required for Dev Mode.',
+					validate=EmptyInputValidator(commons.NO_EMPTY)
+			).execute()
+
+			githubToken = inquirer.secret(
+					message='Enter your Github access token. This is required for Dev Mode.',
+					validate=EmptyInputValidator(commons.NO_EMPTY),
+					transformer=lambda _: commons.HIDDEN
+			).execute()
+
+		enableDataStoring = inquirer.confirm(
+				message='Enable telemetry data storing?',
+				default=True
+		).execute()
+
+		skillAutoUpdate = inquirer.confirm(
+				message='Enable skill auto update?',
+				default=True
+		).execute()
+
+	confs['adminPinCode'] = str(int(adminPinCode)).zfill(4)
+	confs['mqttHost'] = mqttHost
+	confs['mqttPort'] = int(mqttPort)
+	confs['activeLanguage'] = activeLanguage
+	confs['activeCountryCode'] = activeCountryCode
+	confs['useHLC'] = installHLC
+	confs['aliceUpdateChannel'] = releaseType
+	confs['skillsUpdateChannel'] = releaseType
+	confs['ttsLanguage'] = f'{activeLanguage}-{activeCountryCode}'
+
+	if soundInstalled:
+		confs['installSound'] = False
+	else:
+		confs['installSound'] = True
+		if audioDevice:
+			confs['audioHardware'][audioDevice] = True
+
+	confs['asr'] = asr
+	confs['awsAccessKey'] = awsAccessKey
+	confs['awsSecretKey'] = awsSecretKey
+	confs['tts'] = tts
+	confs['shortReplies'] = shortReplies
+	confs['devMode'] = devMode
+	confs['githubUsername'] = githubUsername
+	confs['githubToken'] = githubToken
+	confs['enableDataStoring'] = enableDataStoring
+	confs['skillAutoUpdate'] = skillAutoUpdate
+
+	if googleServiceFile and Path(googleServiceFile).exists():
+		confs['googleServiceFile'] = Path(googleServiceFile).read_text()
+
+	if asr == 'google':
+		confs['keepASROffline'] = False
+
+	if tts in ['amazon', 'google', 'watson']:
+		confs['keepTTSOffline'] = False
+
+	return confs
+
+
+def getAliceSatConfig(confs, releaseType):
+	audioDevice = inquireAudioDevice()
+
+	soundInstalled = inquirer.confirm(
+			message='Did you already install your sound hardware using Alice CLI or confirmed it to be working?',
+			default=False
+	).execute()
+
+	installHLC = inquirer.confirm(
+			message='Do you want to install HLC? HLC can pilot leds such as the ones on Respeakers to provide visual feedback.',
+			default=False
+	).execute()
+
+	confs['useHLC'] = installHLC
+	confs['aliceUpdateChannel'] = releaseType
+
+	if soundInstalled:
+		confs['installSound'] = False
+	else:
+		confs['installSound'] = True
+		if audioDevice:
+			confs['audioHardware'][audioDevice] = True
+
+	return confs
+
+
+def inquireAudioDevice():
+	return inquirer.select(
+			message='Select your audio hardware if listed',
+			default='respeaker2',
+			choices=[
+				Choice('respeaker2', name='Respeaker 2 mics'),
+				Choice('respeaker4', name='Respeaker 4 mic array'),
+				Choice('respeaker4MicLinear', name='Respeaker 4 mic linear array'),
+				Choice('respeaker6', name='Respeaker 6 mic array'),
+				Choice('respeaker7', name='Respeaker 7'),
+				Choice('respeakerCoreV2', name='Respeaker Core version 2'),
+				Choice('googleAIY', name='Google AIY'),
+				Choice('googleAIY2', name='Google AIY 2'),
+				Choice('matrixCreator', name='Matrix Creator'),
+				Choice('matrixVoice', name='Matrix Voice'),
+				Choice('ps3eye', name='PS3 Eye'),
+				Choice('jabra410', name='Jabra 410'),
+				Choice(None)
+			]
+	).execute()

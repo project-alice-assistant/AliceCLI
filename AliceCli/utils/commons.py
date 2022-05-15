@@ -782,13 +782,13 @@ def sshCmdWithReturn(cmd: str) -> Tuple:
 
 
 # noinspection DuplicatedCode
-def getUpdateSource(definedSource: str) -> str:
+def getUpdateSource(name: str, definedSource: str) -> str:
 	updateSource = 'master'
 	if definedSource in {'master', 'release'}:
 		return updateSource
 
 	# noinspection PyUnboundLocalVariable
-	req = requests.get('https://api.github.com/repos/project-alice-assistant/ProjectAlice/branches')
+	req = requests.get(f'https://api.github.com/repos/project-alice-assistant/{name}/branches')
 	result = req.json()
 
 	versions = list()

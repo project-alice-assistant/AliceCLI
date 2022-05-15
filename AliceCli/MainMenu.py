@@ -27,7 +27,7 @@ from InquirerPy.separator import Separator
 
 from AliceCli.Version import Version
 from AliceCli.alice.alice import reportBug, systemctl, updateAlice
-from AliceCli.install.install import installAlice, installSoundDevice, prepareSdCard, uninstallSoundDevice
+from AliceCli.install.install import installAlice, installAliceSatellite, installSoundDevice, prepareSdCard, uninstallSoundDevice
 from AliceCli.utils.commons import connect, discover
 from AliceCli.utils.utils import aliceLogs, changeHostname, changePassword, disableRespeakerLeds, reboot, soundTest, systemLogs, updateSystem, upgradeSystem
 
@@ -82,6 +82,7 @@ def mainMenu(ctx: click.Context):
 			Choice(lambda: ctx.invoke(installSoundDevice), name='Install your sound device'),
 			Choice(lambda: ctx.invoke(soundTest), name='Sound test'),
 			Choice(lambda: ctx.invoke(installAlice), name='Install Alice'),
+			Choice(lambda: ctx.invoke(installAliceSatellite), name='Install Alice Satellite'),
 		    Separator(line='\n------- Service -------'),
 			Choice(lambda: ctx.invoke(systemctl, option='start'), name='Start Alice'),
 		    Choice(lambda: ctx.invoke(systemctl, option='restart'), name='Restart Alice'),
