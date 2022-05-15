@@ -114,7 +114,7 @@ def install(ctx: click.Context, force: bool, name: str):
 				default=False
 			).execute()
 
-			if confirm:
+			if not confirm:
 				commons.returnToMainMenu(ctx)
 				return
 
