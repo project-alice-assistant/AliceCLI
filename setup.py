@@ -25,7 +25,7 @@ from setuptools import find_packages, setup
 
 setup(
 	name='projectalice-cli',
-	version='1.3.1',
+	version='1.3.2',
 	long_description=Path('README.md').read_text(encoding='utf8'),
 	long_description_content_type='text/markdown',
 	python_requires='>=3.8',
