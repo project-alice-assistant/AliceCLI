@@ -176,6 +176,9 @@ def install(ctx: click.Context, force: bool, name: str):
 
 	commons.printInfo('Cloning Alice')
 	sshCmd(f'git clone https://github.com/project-alice-assistant/{name}.git ~/ProjectAlice')
+	if name == 'ProjectAliceSatellite':
+		sshCmd(f'git checkout 1.0.0-rc1')
+		sshCmd(f'git pull')
 
 	sftp = commons.SSH.open_sftp()
 	sftp.put(str(confFile), f'/home/pi/ProjectAlice/{name}.yaml')
