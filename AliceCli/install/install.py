@@ -389,6 +389,8 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 
 	elif operatingSystem == 'darwin':
 		sdCards = getSdCards()
+		sdCards = [sd.split('/')[-1] for sd in sdCards]
+
 		command = f'diskutil list -plist | plutil -convert json -r -o - -'
 
 		output = subprocess.run(command, capture_output=True, shell=True).stdout.decode()
