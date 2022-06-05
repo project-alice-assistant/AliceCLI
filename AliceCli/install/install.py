@@ -372,27 +372,34 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 
 	drives = list()
 	drive = ''
-	if operatingSystem == 'linux' or operatingSystem == 'darwin':
+	if operatingSystem == 'linux':
 		# typically, boot partition is the first increment of SD device
 		# e.g. on /dev/sda drive /dev/sda1 is "boot" and /dev/sda2 is "rootfs"
 		# Lookup up the boot mount point path via lsblk
 
 		sdCards = getSdCards()
 		command = f'sudo lsblk -o PATH,FSTYPE,LABEL,MOUNTPOINT --json'
+
 		output = subprocess.run(command, capture_output=True, shell=True).stdout.decode()
 		blkDevices = json.loads(output)
+
 		for device in blkDevices['blockdevices']:
 			if device["path"].startswith(tuple(sdCards)) and device['fstype'] == 'vfat' and device['label'] == 'boot':
 				drives.append(Choice(value=device, name=device['path']))
 
-		if len(drives) == 0:
-			commons.printError(f'For some reason I cannot find the SD boot partition mount point {drive}.')
-			commons.returnToMainMenu(ctx, pause=True, message="I'm really sorry, but I just can't continue without this info, sorry for wasting your time...")
+	elif operatingSystem == 'darwin':
+		sdCards = getSdCards()
+		command = f'sudo diskutil list -plist | plutil -convert json -r -o - -'
 
-		if len(drives) == 1:
-			device = drives[0].value
-			commons.printInfo(f'Auto-selected {device["path"]}.')
-			drive = device
+		output = subprocess.run(command, capture_output=True, shell=True).stdout.decode()
+		allDevices = json.loads(output)
+
+		for device in allDevices['AllDisksAndPartitions']:
+			if device["DeviceIdentifier"].startswith(tuple(sdCards)):
+				for part in device['Partitions']:
+					if part['Content'] == 'Windows_FAT_32' and part['VolumeName'] == 'boot':
+						drives.append(Choice(value=part['MountPoint'], name=device['DeviceIdentifier']))
+
 	else:
 		j = 0
 		while len(drives) <= 0:
@@ -410,6 +417,15 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 					click.pause()
 				else:
 					break
+
+	if len(drives) == 0:
+		commons.printError(f'For some reason I cannot find the SD boot partition mount point {drive}.')
+		commons.returnToMainMenu(ctx, pause=True, message="I'm really sorry, but I just can't continue without this info, sorry for wasting your time...")
+
+	if len(drives) == 1:
+		device = drives[0].value
+		commons.printInfo(f'Auto-selected {device["path"]}.')
+		drive = device
 
 	if not drive:
 		drive = inquirer.select(
