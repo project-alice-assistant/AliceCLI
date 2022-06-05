@@ -277,8 +277,11 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 			sysPath = os.environ['PATH']
 			commons.printInfo(f'New PATH: {sysPath}')
 			click.pause('Installation Done. Press a key')
+		elif operatingSystem == 'darwin':
+			click.pause('Experimental install on mac - please provide feedback in discord and I\' remove this message ;)')
+			subprocess.run("sudo installer -pkg /path/to/pkg/balena-cli-v13.1.1-macOS-x64-installer.pkg -target /")
 		else:
-			click.pause('I have no idea how to install stuff on Mac, so I have downloaded the tool for you, please install it. Oh, and contact Psycho to let him know how to install a pkg file on Mac ;-)')
+			click.pause(f'I have no idea how to install stuff on {operatingSystem}. Please install balena manually. Oh, and contact us on discord to let us know how to install it ;)')
 			exit(0)
 
 	if doFlash:
@@ -337,8 +340,8 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 		else:
 			file = image
 
-		if operatingSystem == 'windows' or operatingSystem == 'linux':
-			if operatingSystem == 'linux':
+		if operatingSystem == 'windows' or operatingSystem == 'linux' or operatingSystem == 'darwin':
+			if operatingSystem == 'linux' or operatingSystem == 'darwin':
 				# this only works on distros with "sudo" support.
 				balenaCommand = f'sudo {balenaExecutablePath} local flash {str(file)} --drive {drive} --yes'
 			else:
@@ -346,7 +349,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 			subprocess.run(balenaCommand, shell=True)
 			time.sleep(5)
 		else:
-			commons.returnToMainMenu(ctx, pause=True, message='Flashing only supported on Windows and Linux systems for now. If you have the knowledge to implement it on other systems, feel free to pull request!')
+			commons.returnToMainMenu(ctx, pause=True, message='Flashing only supported on Windows, Linux and MacOs systems for now. If you have the knowledge to implement it on other systems, feel free to pull request!')
 			return
 
 		click.pause('Flashing complete. Please eject, unplug and replug your SD back, then press any key to continue...')
@@ -369,7 +372,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 
 	drives = list()
 	drive = ''
-	if operatingSystem == 'linux':
+	if operatingSystem == 'linux' or operatingSystem == 'darwin':
 		# typically, boot partition is the first increment of SD device
 		# e.g. on /dev/sda drive /dev/sda1 is "boot" and /dev/sda2 is "rootfs"
 		# Lookup up the boot mount point path via lsblk
