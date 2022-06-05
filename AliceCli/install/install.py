@@ -400,8 +400,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 			if device["DeviceIdentifier"].startswith(tuple(sdCards)):
 				commons.printInfo(f'Checking partitions of {device["DeviceIdentifier"]}')
 				for part in device['Partitions']:
-					commons.printInfo(f'Found partition {device["DeviceIdentifier"]} - {part["VolumeName"]}. Content {part["Content"]}')
-					if part['Content'] == 'Windows_FAT_32' and part['VolumeName'] == 'boot':
+					if 'Content' in part and part['Content'] == 'Windows_FAT_32' and 'VolumenName' in part and part['VolumeName'] == 'boot':
 						drives.append(Choice(value=part['MountPoint'], name=device['DeviceIdentifier']))
 			else:
 				commons.printInfo(f'Device not relevant: {device["DeviceIdentifier"]}')
