@@ -278,7 +278,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 			commons.printInfo(f'New PATH: {sysPath}')
 			click.pause('Installation Done. Press a key')
 		elif operatingSystem == 'darwin':
-			subprocess.run(f'sudo installer -pkg {destination} -target /')
+			subprocess.run(f'sudo installer -pkg {destination} -target /', shell=True)
 			click.pause('Installation Done. Press a key')
 		else:
 			click.pause(f'I have no idea how to install stuff on {operatingSystem}. Please install balena manually. Oh, and contact us on discord to let us know how to install it ;)')
