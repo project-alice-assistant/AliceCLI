@@ -476,13 +476,13 @@ def doDownload(url: str, destination: Path):
 
 def getSdCards() -> List[str]:
 	operatingSystem = platform.system().lower()
-	if operatingSystem == 'linux':
+	if operatingSystem == 'windows':
+		balenaCommand = 'balena util available-drives'
+		driveSep = '\\'
+	else:
 		balenaExecutablePath = getBalenaPath()
 		balenaCommand = f'{balenaExecutablePath} util available-drives'
 		driveSep = os.path.sep  # typically '/'
-	else:
-		balenaCommand = 'balena util available-drives'
-		driveSep = '\\'
 
 	drives = list()
 
