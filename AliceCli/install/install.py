@@ -430,7 +430,10 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 
 	if len(drives) == 1:
 		device = drives[0].value
-		commons.printInfo(f'Auto-selected {device["path"]}.')
+		if operatingSystem == 'linux':
+			commons.printInfo(f'Auto-selected {device["path"]}.')
+		else:
+			commons.printInfo(f'Auto-selected {device}.')
 		drive = device
 
 	if not drive:
