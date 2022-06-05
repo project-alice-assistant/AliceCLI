@@ -389,16 +389,20 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 
 	elif operatingSystem == 'darwin':
 		sdCards = getSdCards()
-		command = f'sudo diskutil list -plist | plutil -convert json -r -o - -'
+		command = f'diskutil list -plist | plutil -convert json -r -o - -'
 
 		output = subprocess.run(command, capture_output=True, shell=True).stdout.decode()
 		allDevices = json.loads(output)
 
 		for device in allDevices['AllDisksAndPartitions']:
 			if device["DeviceIdentifier"].startswith(tuple(sdCards)):
+				commons.printInfo(f'Checking partitions of {device["DeviceIdentifier"]}')
 				for part in device['Partitions']:
+					commons.printInfo(f'Found partition {device["DeviceIdentifier"]} - {part["VolumeName"]}. Content {part["Content"]}')
 					if part['Content'] == 'Windows_FAT_32' and part['VolumeName'] == 'boot':
 						drives.append(Choice(value=part['MountPoint'], name=device['DeviceIdentifier']))
+			else:
+				commons.printInfo(f'Device not relevant: {device["DeviceIdentifier"]}')
 
 	else:
 		j = 0
