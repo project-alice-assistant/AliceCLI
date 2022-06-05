@@ -40,3 +40,6 @@ Type `alice` in your terminal to open the main menu or type `alice --help` to di
 This tool stores its configurations in `%USER_DIRECTORY%/.pacli`
 
 This tool stores its generated SSH certificates in `%USER_DIRECTORY%/.ssh`
+
+# Thank You!
+jonah1024: A big thank you for making this work in macOs as well!
