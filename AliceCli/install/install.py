@@ -423,7 +423,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 					click.pause()
 				else:
 					break
-	print(drives)
+
 	if len(drives) == 0:
 		commons.printError(f'For some reason I cannot find the SD boot partition mount point {drive}.')
 		commons.returnToMainMenu(ctx, pause=True, message="I'm really sorry, but I just can't continue without this info, sorry for wasting your time...")
