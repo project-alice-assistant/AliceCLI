@@ -156,7 +156,7 @@ def install(ctx: click.Context, force: bool, name: str):
 			commons.printError(f'Failed reading {name}.yaml {e}')
 			commons.returnToMainMenu(ctx, pause=True)
 
-	if name == 'ProjecAlice':
+	if name == 'ProjectAlice':
 		config = getAliceConfig(config, releaseType)
 	elif name == 'ProjectAliceSatellite':
 		config = getAliceSatConfig(config, releaseType)
