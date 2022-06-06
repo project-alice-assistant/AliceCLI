@@ -132,7 +132,6 @@ def install(ctx: click.Context, force: bool, name: str):
 		]
 	).execute()
 
-	commons.waitAnimation()
 	confFile = Path(Path.home(), f'.pacli/{name}.yaml')
 	confFile.parent.mkdir(parents=True, exist_ok=True)
 
@@ -163,6 +162,7 @@ def install(ctx: click.Context, force: bool, name: str):
 	else:
 		commons.printError(f'Unknown install type {name}')
 
+	commons.waitAnimation()
 	with confFile.open(mode='w') as f:
 		yaml.dump(config, f)
 
@@ -551,9 +551,9 @@ def getAliceConfig(confs, releaseType):
 			validate=EmptyInputValidator(commons.NO_EMPTY)
 	).execute()
 
-	mqttPort = inquirer.number(
+	mqttPort = inquirer.text(
 			message='Mqtt port',
-			default=1883,
+			default='1883',
 			validate=EmptyInputValidator(commons.NO_EMPTY)
 	).execute()
 
@@ -610,8 +610,8 @@ def getAliceConfig(confs, releaseType):
 				default='coqui',
 				choices=[
 					Choice('coqui', name='Coqui'),
-					Choice('snips', name='Snips (English only!)'),
-					Choice('google', name='Google (Online!)'),
+					Choice('snips', name='Snips (/!\ English only)'),
+					Choice('google', name='Google (/!\ Online)'),
 					Choice('deepspeech', name='Deepspeech'),
 					Choice('pocketsphinx', name='PocketSphinx')
 				]
@@ -623,9 +623,9 @@ def getAliceConfig(confs, releaseType):
 				choices=[
 					Choice('pico', name='Coqui'),
 					Choice('mycroft', name='Mycroft'),
-					Choice('amazon', name='Amazon'),
-					Choice('google', name='Google'),
-					Choice('watson', name='Watson')
+					Choice('amazon', name='Amazon (/!\ Online)'),
+					Choice('google', name='Google (/!\ Online)'),
+					Choice('watson', name='Watson (/!\ Online)')
 				]
 		).execute()
 
@@ -645,7 +645,7 @@ def getAliceConfig(confs, releaseType):
 		if tts == 'google' or asr == 'google':
 			googleServiceFile = inquirer.filepath(
 					message='Enter your Google service file path',
-					default='~/',
+					default='',
 					validate=PathValidator(is_file=True, message='Input is not a file')
 			).execute()
 
