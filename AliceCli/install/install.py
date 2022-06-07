@@ -695,8 +695,9 @@ def getAliceConfig(confs, releaseType):
 		confs['installSound'] = False
 	else:
 		confs['installSound'] = True
-		if audioDevice:
-			confs['audioHardware'][audioDevice] = True
+
+	if audioDevice:
+		confs['audioHardware'][audioDevice] = True
 
 	confs['asr'] = asr
 	confs['awsAccessKey'] = awsAccessKey
