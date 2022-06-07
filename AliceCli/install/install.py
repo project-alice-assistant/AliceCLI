@@ -118,8 +118,10 @@ def install(ctx: click.Context, force: bool, name: str):
 				commons.returnToMainMenu(ctx)
 				return
 
+		commons.waitAnimation()
 		sshCmd('sudo systemctl stop ProjectAlice')
 		sshCmd('sudo rm -rf ~/ProjectAlice')
+		commons.stopAnimation()
 
 	releaseType = inquirer.select(
 		message='What releases do you want to receive? If you are unsure, leave this to Stable releases!',
@@ -621,14 +623,15 @@ def getAliceConfig(confs, releaseType):
 				message='Select the TTS engine you want to use',
 				default='pico',
 				choices=[
-					Choice('pico', name='Coqui'),
-					Choice('mycroft', name='Mycroft'),
-					Choice('amazon', name='Amazon (/!\ Online)'),
-					Choice('google', name='Google (/!\ Online)'),
-					Choice('watson', name='Watson (/!\ Online)')
+					Choice('pico', name='Pico (Supports EN, DE, FR, IT only)'),
+					Choice('mycroft', name='Mycroft (Supports EN only)'),
+					Choice('amazon', name='Amazon (/!\ Online) (Supports all languages)'),
+					Choice('google', name='Google (/!\ Online) (Supports all languagese'),
+					Choice('watson', name='Watson (/!\ Online) (Supports EN, DE, FR, IT, PT')
 				]
 		).execute()
 
+		ttsGender = 'male'
 		if tts == 'amazon':
 			awsAccessKey = inquirer.secret(
 					message='Enter your AWS access key',
@@ -641,6 +644,40 @@ def getAliceConfig(confs, releaseType):
 					validate=EmptyInputValidator(commons.NO_EMPTY),
 					transformer=lambda _: commons.HIDDEN
 			).execute()
+
+			ttsVoice = inquirer.select(
+				message='Choose your TTS voice',
+				choices=commons.AMAZON_VOICES[activeLanguage] if activeLanguage in commons.AMAZON_VOICES and len(commons.AMAZON_VOICES[activeLanguage]) > 0 else ['en-US']
+			).execute()
+
+			ttsVoice, ttsGender = ttsVoice.split('/')
+
+		elif tts == 'google':
+			ttsVoice = inquirer.select(
+				message='Choose your TTS voice',
+				choices=commons.GOOGLE_VOICES[activeLanguage] if activeLanguage in commons.GOOGLE_VOICES and len(commons.GOOGLE_VOICES[activeLanguage]) > 0 else ['en-US']
+			).execute()
+
+			ttsVoice, ttsGender = ttsVoice.split('/')
+		elif tts == 'watson':
+			ttsVoice = inquirer.select(
+				message='Choose your TTS voice',
+				choices=commons.WATSON_VOICES[activeLanguage] if activeLanguage in commons.WATSON_VOICES and len(commons.WATSON_VOICES[activeLanguage]) > 0 else ['en-US']
+			).execute()
+
+			ttsVoice, ttsGender = ttsVoice.split('/')
+		elif tts == 'mycroft':
+			ttsVoice = inquirer.select(
+				message='Choose your TTS voice',
+				choices=commons.MYCROFT_VOICES[activeLanguage] if activeLanguage in commons.MYCROFT_VOICES and len(commons.MYCROFT_VOICES[activeLanguage]) > 0 else ['en-US']
+			).execute()
+		elif tts == 'pico':
+			ttsVoice = inquirer.select(
+				message='Choose your TTS voice',
+				choices=commons.PICO_VOICES[activeLanguage] if activeLanguage in commons.PICO_VOICES and len(commons.PICO_VOICES[activeLanguage]) > 0 else ['en-US']
+			).execute()
+		else:
+			ttsVoice = 'en-US'
 
 		if tts == 'google' or asr == 'google':
 			googleServiceFile = inquirer.filepath(
@@ -689,6 +726,8 @@ def getAliceConfig(confs, releaseType):
 	confs['useHLC'] = installHLC
 	confs['aliceUpdateChannel'] = releaseType
 	confs['skillsUpdateChannel'] = releaseType
+	confs['ttsVoice'] = ttsVoice
+	confs['ttsType'] = ttsGender
 	confs['ttsLanguage'] = f'{activeLanguage}-{activeCountryCode}'
 
 	if soundInstalled:
