@@ -599,7 +599,7 @@ def connect(ctx: click.Context, ip_address: str, port: int, user: str, password:
 
 	if not keyFile and not password:
 		password = inquirer.secret(
-			message='Please enter the connection password',
+			message='Please enter the device\' password',
 			transformer=lambda _: HIDDEN
 		).execute()
 
