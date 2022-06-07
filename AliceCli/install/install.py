@@ -742,8 +742,9 @@ def getAliceSatConfig(confs, releaseType):
 		confs['installSound'] = False
 	else:
 		confs['installSound'] = True
-		if audioDevice:
-			confs['audioHardware'][audioDevice] = True
+
+	if audioDevice:
+		confs['audioHardware'][audioDevice] = True
 
 	return confs
 
