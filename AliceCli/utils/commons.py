@@ -490,6 +490,211 @@ LANGUAGE_CODES = [
 	Choice('zu', name='Zulu')
 ]
 
+AMAZON_VOICES = {
+	'en': [
+		Separator('------ US ------'), #NOSONAR
+		Choice('Joey/male', name='en-US - male - Joey'),
+		Choice('Justin/male', name='en-US - male - Justin'),
+		Choice('Matthew/male', name='en-US - male - Matthew'),
+		Choice('Ivy/female', name='en-US - female - Ivy'),
+		Choice('Joanna/female', name='en-US - female - Joanna'),
+		Choice('Kendra/female', name='en-US - female - Kendra'),
+		Choice('Kimberly/female', name='en-US - female - Kimberly'),
+		Choice('Salli/female', name='en-US - female - Salli'),
+		Separator('------ AU ------'),
+		Choice('Russell/male/female', name='en-AU - male - Russell'),
+		Choice('Nicole/female', name='en-AU - female - Nicole'),
+		Separator('------ GB ------'), #NOSONAR
+		Choice('Brian/male', name='en-GB - male - Brian'),
+		Choice('Amy/female', name='en-GB - female - Amy'),
+		Choice('Emma/female', name='en-GB - female - Emma')
+	],
+	'fr': [
+		Separator('------ FR ------'),
+		Choice('Mathieu/male', name='fr-FR - male - Mathieu'),
+		Choice('Celine/female', name='fr-FR - female - Celine'),
+		Separator('------ CA ------'),
+		Choice('Chantal/female', name='fr-CA - female - Chantal')
+	],
+	'de': [
+		Choice('Hans/male', name='de-DE - male - Hans'),
+		Choice('Marlene/female', name='de-DE - female - Marlene'),
+		Choice('Vicki/female', name='de-DE - female - Vicki')
+	],
+	'it': [
+		Choice('Giorgio/male', name='it-IT - male - Giorgio'),
+		Choice('Bianca/female', name='it-IT - female - Bianca'),
+		Choice('Carla/female', name='it-IT - female - Carla')
+	],
+	'pl': [
+		Choice('Jacek/male', name='pl-PL - male - Jacek'),
+		Choice('Jan/male', name='pl-PL - male - Jan'),
+		Choice('Ewa/female', name='pl-PL - female - Ewa'),
+		Choice('Maja/female', name='pl-PL - female - Maja')
+	],
+	'pt': [
+		Separator('------ BR ------'),
+		Choice('Ricardo/male', name='pt-BR - male - Ricardo'),
+		Choice('Camila/female', name='pt-BR - female - Camila'),
+		Choice('Vitoria/female', name='pt-BR - female - Vitoria'),
+		Separator('------ PT ------'),
+		Choice('Cristiano/male', name='pt-PT - male - Cristiano'),
+		Choice('Ines/female', name='pt-PT - female - Ines')
+	]
+}
+
+GOOGLE_VOICES = {
+	'en': [
+		Choice('en-US-Standard-B/male', name='en-US - male - en-US-Standard-B'),
+		Choice('en-US-Standard-D/male', name='en-US - male - en-US-Standard-D'),
+		Choice('en-US-Wavenet-A/male', name='en-US - male - en-US-Wavenet-A'),
+		Choice('en-US-Wavenet-B/male', name='en-US - male - en-US-Wavenet-B'),
+		Choice('en-US-Wavenet-D/male', name='en-US - male - en-US-Wavenet-D'),
+		Choice('en-US-Standard-C/male', name='en-US - female - en-US-Standard-C'),
+		Choice('en-US-Standard-E/female', name='en-US - female - en-US-Standard-E'),
+		Choice('en-US-Wavenet-C/female', name='en-US - female - en-US-Wavenet-C'),
+		Choice('en-US-Wavenet-E/female', name='en-US - female - en-US-Wavenet-E'),
+		Choice('en-US-Wavenet-F/female', name='en-US - female - en-US-Wavenet-F')
+	],
+	'fr': [
+		Choice('fr-FR-Standard-B/male', name='fr-FR - male - fr-FR-Standard-B'),
+		Choice('fr-FR-Standard-D/male', name='fr-FR - male - fr-FR-Standard-D'),
+		Choice('fr-FR-Wavenet-B/male', name='fr-FR - male - fr-FR-Wavenet-B'),
+		Choice('fr-FR-Wavenet-D/male', name='fr-FR - male - fr-FR-Wavenet-D'),
+		Choice('fr-FR-Standard-A/female', name='fr-FR - female - fr-FR-Standard-A'),
+		Choice('fr-FR-Standard-C/female', name='fr-FR - female - fr-FR-Standard-C'),
+		Choice('fr-FR-Wavenet-A/female', name='fr-FR - female - fr-FR-Wavenet-A'),
+		Choice('fr-FR-Wavenet-C/female', name='fr-FR - female - fr-FR-Wavenet-C')
+	],
+	'de': [
+		Choice('de-DE-Standard-B/male', name='de-DE - male - de-DE-Standard-B'),
+		Choice('de-DE-Wavenet-B/male', name='de-DE - male - de-DE-Wavenet-B'),
+		Choice('de-DE-Wavenet-D/male', name='de-DE - male - de-DE-Wavenet-D'),
+		Choice('de-DE-Standard-A/female', name='de-DE - female - de-DE-Standard-A'),
+		Choice('de-DE-Wavenet-A/female', name='de-DE - female - de-DE-Wavenet-A'),
+		Choice('de-DE-Wavenet-C/female', name='de-DE - female - de-DE-Wavenet-C')
+	],
+	'it': [
+		Choice('it-IT-Standard-C/male', name='it-IT - male - it-IT-Standard-C'),
+		Choice('it-IT-Standard-D/male', name='it-IT - male - it-IT-Standard-D'),
+		Choice('it-IT-Wavenet-C/male', name='it-IT - male - it-IT-Wavenet-C'),
+		Choice('it-IT-Wavenet-D/male', name='it-IT - male - it-IT-Wavenet-D'),
+		Choice('it-IT-Standard-A/female', name='it-IT - female - it-IT-Standard-A'),
+		Choice('it-IT-Standard-B/female', name='it-IT - female - it-IT-Standard-B'),
+		Choice('it-IT-Wavenet-A/female', name='it-IT - female - it-IT-Wavenet-A'),
+		Choice('it-IT-Wavenet-B/female', name='it-IT - female - it-IT-Wavenet-B')
+	],
+	'pl': [
+		Choice('pl-PL-Standard-B/male', name='pl-PL - male - pl-PL-Standard-B'),
+		Choice('pl-PL-Standard-C/male', name='pl-PL - male - pl-PL-Standard-C'),
+		Choice('pl-PL-Wavenet-B/male', name='pl-PL - male - pl-PL-Wavenet-B'),
+		Choice('pl-PL-Wavenet-C/male', name='pl-PL - male - pl-PL-Wavenet-C'),
+		Choice('pl-PL-Standard-A/female', name='pl-PL - female - pl-PL-Standard-A'),
+		Choice('pl-PL-Standard-D/female', name='pl-PL - female - pl-PL-Standard-D'),
+		Choice('pl-PL-Standard-E/female', name='pl-PL - female - pl-PL-Standard-E'),
+		Choice('pl-PL-Wavenet-A/female', name='pl-PL - female - pl-PL-Wavenet-A'),
+		Choice('pl-PL-Wavenet-D/female', name='pl-PL - female - pl-PL-Wavenet-D'),
+		Choice('pl-PL-Wavenet-E/female', name='pl-PL - female - pl-PL-Wavenet-E')
+	],
+	'pt': [
+		Separator('------ BR ------'),
+		Choice('pt-BR-Standard-A/female', name='pt-BR - female - pt-BR-Standard-A'),
+		Choice('pt-BR-Wavenet-A/female', name='pt-BR - female - pt-BR-Wavenet-A'),
+		Separator('------ PT ------'),
+		Choice('pt-PT-Standard-A/female', name='pt-PT - female - pt-PT-Standard-A'),
+		Choice('pt-PT-Standard-B/male', name='pt-PT - male - pt-PT-Standard-B'),
+		Choice('pt-PT-Standard-C/male', name='pt-PT - male - pt-PT-Standard-C'),
+		Choice('pt-PT-Standard-D/female', name='pt-PT - female - pt-PT-Standard-D'),
+		Choice('pt-PT-Wavenet-A/female', name='pt-PT - female - pt-PT-Wavenet-A'),
+		Choice('pt-PT-Wavenet-B/male', name='pt-PT - male - pt-PT-Wavenet-B'),
+		Choice('pt-PT-Wavenet-C/male', name='pt-PT - male - pt-PT-Wavenet-C'),
+		Choice('pt-PT-Wavenet-D/female', name='pt-PT - female - pt-PT-Wavenet-D')
+	]
+}
+
+MYCROFT_VOICES = {
+	'en': [
+		Choice('slt', name='en-US - male - slt'),
+		Choice('aew', name='en-US - male - aew'),
+		Choice('ahw', name='en-US - male - ahw'),
+		Choice('aup', name='en-US - male - aup'),
+		Choice('awb', name='en-US - male - awb'),
+		Choice('axb', name='en-US - male - axb'),
+		Choice('bdl', name='en-US - male - bdl'),
+		Choice('clb', name='en-US - male - clb'),
+		Choice('eey', name='en-US - male - eey'),
+		Choice('fem', name='en-US - male - fem'),
+		Choice('gka', name='en-US - male - gka'),
+		Choice('jmk', name='en-US - male - jmk'),
+		Choice('ksp', name='en-US - male - ksp'),
+		Choice('ljm', name='en-US - male - ljm'),
+		Choice('rms', name='en-US - male - rms'),
+		Choice('rxr', name='en-US - male - rxr')
+	],
+	'fr': [],
+	'de': [],
+	'it': [],
+	'pl': [],
+	'pt': []
+}
+
+WATSON_VOICES = {
+	'en': [
+		Separator('------ US ------'),
+		Choice('en-US_HenryV3Voice/male', name='en-US - male - en-US_HenryV3Voice'),
+		Choice('en-US_KevinV3Voice/male', name='en-US - male - en-US_KevinV3Voice'),
+		Choice('en-US_MichaelVoice/male', name='en-US - male - en-US_MichaelVoice'),
+		Choice('en-US_MichaelV3Voice/male', name='en-US - male - en-US_MichaelV3Voice'),
+		Choice('en-US_AllisonVoice/female', name='en-US - female - en-US_AllisonVoice'),
+		Choice('en-US_AllisonV3Voice/female', name='en-US - female - en-US_AllisonV3Voice'),
+		Choice('en-US_EmilyV3Voice/female', name='en-US - female - en-US_EmilyV3Voice'),
+		Choice('en-US_LisaVoice/female', name='en-US - female - en-US_LisaVoice'),
+		Choice('en-US_LisaV3Voice/female', name='en-US - female - en-US_LisaV3Voice'),
+		Choice('en-US_OliviaV3Voice/female', name='en-US - female - en-US_OliviaV3Voice'),
+		Separator('------ GB ------'),
+		Choice('en-GB_KateV3Voice/female', name='en-GB - female - en-GB_KateV3Voice')
+	],
+	'fr': [
+		Choice('fr-FR_ReneeVoice/female', name='fr-FR - female - fr-FR_ReneeVoice'),
+		Choice('fr-FR_ReneeV3Voice/female', name='fr-FR - female - fr-FR_ReneeV3Voice')
+	],
+	'de': [
+		Choice('de-DE_DieterVoice/male', name='de-DE - male - de-DE_DieterVoice'),
+		Choice('de-DE_DieterV3Voice/male', name='de-DE - male - de-DE_DieterV3Voice'),
+		Choice('de-DE_BirgitVoice/female', name='de-DE - female - de-DE_BirgitVoice'),
+		Choice('de-DE_BirgitV3Voice/female', name='de-DE - female - de-DE_BirgitV3Voice'),
+		Choice('de-DE_ErikaV3Voice/female', name='de-DE - female - de-DE_ErikaV3Voice')
+	],
+	'it': [
+		Choice('it-IT_FrancescaVoice/female', name='it-IT - female - it-IT_FrancescaVoice'),
+		Choice('it-IT_FrancescaV3Voice/female', name='it-IT - female - it-IT_FrancescaV3Voice')
+	],
+	'pl': [],
+	'pt': [
+		Choice('pt-BR_IsabelaV3Voice/female', name='pt-BR - female - pt-BR_IsabelaV3Voice')
+	]
+}
+
+PICO_VOICES = {
+	'en': [
+		Separator('------ US ------'),
+		Choice('en-US', name='en-US - male - en-US'),
+		Separator('------ GB ------'),
+		Choice('en-GB', name='en-GB - male - en-GB')
+	],
+	'fr': [
+		Choice('fr-FR', name='fr-FR - male - fr-FR')
+	],
+	'de': [
+		Choice('de-DE', name='de-DE - male - de-DE')
+	],
+	'it': [
+		Choice('it-IT', name='it-IT - male - it-IT')
+	],
+	'pl': [],
+	'pt': []
+}
+
 
 def isAdmin() -> bool:
 	try:
