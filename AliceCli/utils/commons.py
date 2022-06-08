@@ -736,8 +736,8 @@ def discover(ctx: click.Context, network: str, all_devices: bool, return_to_main
 					continue
 
 				if all_devices or (not all_devices and ('projectalice' in name[0].lower() or 'raspberrypi' in name[0].lower())):
-					click.secho(f'{device}: {name[0].replace(".home", "")}', fg='yellow')
-					devices.append(device)
+					#click.secho(f'{device}: {name[0].replace(".home", "")}', fg='yellow')
+					devices.append(Choice(device, name=f'{device}: {name[0].replace(".home", "")}'))
 			except:
 				continue  # If no name, we don't need the device anyway
 
