@@ -24,8 +24,8 @@ import sys
 from InquirerPy import inquirer
 from InquirerPy.base.control import Choice
 from InquirerPy.separator import Separator
+from ProjectAlice.core.base.model.Version import Version
 
-from AliceCli.Version import Version
 from AliceCli.alice.alice import reportBug, systemctl, updateAlice
 from AliceCli.install.install import installAlice, installAliceSatellite, installSoundDevice, prepareSdCard, uninstallSoundDevice
 from AliceCli.utils.commons import connect, discover

@@ -31,12 +31,11 @@ import uuid
 from InquirerPy import inquirer
 from InquirerPy.base.control import Choice
 from InquirerPy.separator import Separator
+from ProjectAlice.core.base.model.Version import Version
 from networkscan import networkscan
 from pathlib import Path
 from threading import Event, Thread
 from typing import Optional, Tuple
-
-from AliceCli.Version import Version
 
 
 IP_REGEX = re.compile(r'^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')
