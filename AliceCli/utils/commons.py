@@ -27,7 +27,6 @@ import requests
 import socket
 import sys
 import time
-import uuid
 from InquirerPy import inquirer
 from InquirerPy.base.control import Choice
 from InquirerPy.separator import Separator
@@ -837,8 +836,12 @@ def connect(ctx: click.Context, ip_address: str, port: int, user: str, password:
 		SSH = ssh
 		CONNECTED_TO = ip_address
 		if ip_address not in confs['servers']:
-			filename = f'id_rsa_{str(uuid.uuid4())}'
+			filename = f'id_rsa_{ip_address}'
 			keyFile = Path(Path.home(), f'.ssh/{filename}')
+			if keyFile.exists():
+				keyFile.unlink()
+				keyFile.with_suffix('.pub').unlink(missing_ok=True)
+
 			confs['servers'][ip_address] = {
 				'keyFile': filename,
 				'user'   : user
