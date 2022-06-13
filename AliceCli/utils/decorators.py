@@ -27,7 +27,9 @@ def checkConnection(func):
 			commons.printError('Please connect to a device first')
 			args[0].invoke(commons.discover, return_to_main_menu=False)
 
-		func(args[0], **kwargs)
-
+		if not commons.CONNECTED_TO:
+			commons.returnToMainMenu(args[0])
+		else:
+			func(args[0], **kwargs)
 
 	return wrapper
