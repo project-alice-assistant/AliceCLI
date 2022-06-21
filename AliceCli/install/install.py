@@ -612,6 +612,7 @@ def getAliceConfig(confs, releaseType):
 				default='coqui',
 				choices=[
 					Choice('coqui', name='Coqui'),
+					Choice('vosk', name='Vosk'),
 					Choice('snips', name='Snips (/!\ English only)'),
 					Choice('google', name='Google (/!\ Online)'),
 					Choice('deepspeech', name='Deepspeech'),
