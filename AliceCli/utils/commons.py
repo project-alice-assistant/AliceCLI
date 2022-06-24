@@ -767,6 +767,9 @@ def connect(ctx: click.Context, ip_address: str, port: int, user: str, password:
 	global SSH, IP_REGEX, CONNECTED_TO
 	remoteAuthorizedKeysFile = '~/.ssh/authorized_keys'
 	confFile = Path(Path.home(), '.pacli/configs.json')
+	sshDirPath = Path(Path.home(), '.ssh')
+	sshDirPath.mkdir(exist_ok=True)
+
 	confFile.parent.mkdir(parents=True, exist_ok=True)
 	if not confFile.exists():
 		confs = dict()
@@ -784,7 +787,7 @@ def connect(ctx: click.Context, ip_address: str, port: int, user: str, password:
 	data = confs['servers'].get(ip_address, dict()).get('keyFile')
 	if data:
 		user = confs['servers'][ip_address]['user']
-		keyFile = Path(Path.home(), f".ssh/{confs['servers'][ip_address]['keyFile']}")
+		keyFile = Path(sshDirPath, f"{confs['servers'][ip_address]['keyFile']}")
 
 		if not keyFile.exists():
 			printError('Declared server is using a non existing RSA key file, removing entry and asking for password.')
@@ -837,7 +840,7 @@ def connect(ctx: click.Context, ip_address: str, port: int, user: str, password:
 		CONNECTED_TO = ip_address
 		if ip_address not in confs['servers']:
 			filename = f'id_rsa_{ip_address}'
-			keyFile = Path(Path.home(), f'.ssh/{filename}')
+			keyFile = Path(sshDirPath, filename)
 			if keyFile.exists():
 				keyFile.unlink()
 				keyFile.with_suffix('.pub').unlink(missing_ok=True)
