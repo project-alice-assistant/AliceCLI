@@ -41,13 +41,14 @@ def mainMenu(ctx: click.Context):
 	global CHECKED, VERSION
 
 	click.clear()
+	click.secho(message='Starting AliceCLI, checking for updates, please wait...')
 
 	if not CHECKED:
 		result = subprocess.run('pip index versions projectalice-cli'.split(), capture_output=True, text=True)
 		if 'error' not in result.stderr.lower():
 			regex = re.compile(r"INSTALLED:.*(?P<installed>[\d]+\.[\d]+\.[\d]+)\n.*LATEST:.*(?P<latest>[\d]+\.[\d]+\.[\d]+)")
 			match = regex.search(result.stdout.strip())
-
+			click.clear()
 			if not match:
 				click.secho(message='Failed checking CLI version\n', fg='red')
 			else:
@@ -62,10 +63,12 @@ def mainMenu(ctx: click.Context):
 
 				VERSION = str(installed)
 		else:
+			click.clear()
 			click.secho(message='Failed checking CLI version\n', fg='red')
 
 		CHECKED = True
 	else:
+		click.clear()
 		click.echo(f'Project Alice CLI version {VERSION}\n')
 
 	action = inquirer.select(
