@@ -50,12 +50,12 @@ def changePassword(ctx: click.Context, current_password: str = None, password: s
 				validate=PasswordValidator(length=8, cap=True, number=True, special=False),
 			    long_instruction='Password must be at least 8 characters long, contain a number and a capital letter. All this.... for your safety!'
 			).execute()
-			confirm_password = inquirer.secret(
+			confirmPassword = inquirer.secret(
 				message='Confirm new password',
 				transformer=lambda _: commons.HIDDEN,
 			).execute()
 
-			if password != confirm_password:
+			if password != confirmPassword:
 				commons.printError('New passwords do not match')
 				retry = inquirer.confirm(message='Try again?', default=True).execute()
 				if not retry:
@@ -228,9 +228,11 @@ def aliceLogs(ctx: click.Context):
 @click.pass_context
 @checkConnection
 def displayLogs(ctx: click.Context, file: str):
+	# noinspection PyBroadException
 	try:
 		commons.sshCmd(f'tail -n 250 -f {file} & {{ read ; kill %1; }}')
 	except:
+		# noinspection PyBroadException
 		try:
 			commons.SSH.exec_command('\r')
 		except:
