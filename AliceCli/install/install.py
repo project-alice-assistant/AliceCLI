@@ -42,7 +42,7 @@ from AliceCli.utils.utils import reboot, systemLogs
 
 
 @click.command(name='installSoundDevice')
-@click.option('-d', '--device', type=click.Choice(['respeaker2', 'respeaker4', 'respeaker4MicLinearArray', 'respeaker6MicArray'], case_sensitive=False))
+@click.option('-d', '--device', type=click.Choice(['respeaker2Mics', 'respeaker4Mics', 'respeaker4MicLinearArray', 'respeaker6MicArray'], case_sensitive=False))
 @click.pass_context
 @checkConnection
 def installSoundDevice(ctx: click.Context, device: str):
@@ -56,7 +56,7 @@ def installSoundDevice(ctx: click.Context, device: str):
 	ctx.invoke(uninstallSoundDevice, device=device, return_to_main_menu=False)
 	commons.waitAnimation()
 	sshCmd('sudo apt-get install git -y')
-	if device.lower() in {'respeaker2', 'respeaker4', 'respeaker4miclineararray', 'respeaker6micarray'}:
+	if device.lower() in {'respeaker2Mics', 'respeaker4Mics', 'respeaker4miclineararray', 'respeaker6micarray'}:
 		sshCmd('git clone https://github.com/HinTak/seeed-voicecard.git ~/seeed-voicecard/')
 		sshCmd('git -C ~/seeed-voicecard/ checkout v5.9 && git -C ~/seeed-voicecard/ pull')
 		sshCmd('cd ~/seeed-voicecard/ && sudo ./install.sh')
@@ -67,7 +67,7 @@ def installSoundDevice(ctx: click.Context, device: str):
 
 
 @click.command(name='uninstallSoundDevice')
-@click.option('-d', '--device', type=click.Choice(['respeaker2', 'respeaker4', 'respeaker4MicLinearArray', 'respeaker6MicArray'], case_sensitive=False))
+@click.option('-d', '--device', type=click.Choice(['respeaker2Mics', 'respeaker4Mics', 'respeaker4MicLinearArray', 'respeaker6MicArray'], case_sensitive=False))
 @click.pass_context
 @checkConnection
 def uninstallSoundDevice(ctx: click.Context, device: str, return_to_main_menu: bool = True):  # NOSONAR
@@ -78,7 +78,7 @@ def uninstallSoundDevice(ctx: click.Context, device: str, return_to_main_menu: b
 		if not device:
 			return
 
-	if device.lower() in {'respeaker2', 'respeaker4', 'respeaker4miclineararray', 'respeaker6micarray'}:
+	if device.lower() in {'respeaker2Mics', 'respeaker4Mics', 'respeaker4miclineararray', 'respeaker6micarray'}:
 		result = sshCmdWithReturn('test -d ~/seeed-voicecard/ && echo "1"')[0].readline()
 		if result:
 			sshCmd('cd ~/seeed-voicecard/ && sudo ./uninstall.sh')
@@ -94,10 +94,10 @@ def getDeviceName() -> str:
 	return inquirer.select(
 		message='Select your device',
 		choices=[
-			Choice('respeaker2', name='Respeaker 2'),
-			Choice('respeaker4', name='Respeaker 4-mic array'),
-			Choice('respeaker4MicLinearArray', name='Respeaker 4 mic linear array'),
-			Choice('respeaker6MicArray', name='Respeaker 6 mic array')
+			Choice('respeaker2Mics', name='Respeaker 2 mics'),
+			Choice('respeaker4Mics', name='Respeaker 4 mics array'),
+			Choice('respeaker4MicLinearArray', name='Respeaker 4 mics linear array'),
+			Choice('respeaker6MicArray', name='Respeaker 6 mics array')
 		]
 	).execute()
 
@@ -792,13 +792,13 @@ def getAliceSatConfig(confs, releaseType):
 def inquireAudioDevice():
 	return inquirer.select(
 			message='Select your audio hardware if listed',
-			default='respeaker2',
+			default='respeaker2Mics',
 			choices=[
-				Choice('respeaker2', name='Respeaker 2 mics'),
-				Choice('respeaker4', name='Respeaker 4 mic array'),
-				Choice('respeaker4MicLinear', name='Respeaker 4 mic linear array'),
-				Choice('respeaker6', name='Respeaker 6 mic array'),
-				Choice('respeaker7', name='Respeaker 7'),
+				Choice('respeaker2Mics', name='Respeaker 2 mics'),
+				Choice('respeaker4Mics', name='Respeaker 4 mics array'),
+				Choice('respeaker4MicLinear', name='Respeaker 4 mics linear array'),
+				Choice('respeaker6', name='Respeaker 6 mics array'),
+				Choice('respeaker7MicArray', name='Respeaker 7 mics array'),
 				Choice('respeakerCoreV2', name='Respeaker Core version 2'),
 				Choice('googleAIY', name='Google AIY'),
 				Choice('googleAIY2', name='Google AIY 2'),
