@@ -162,6 +162,7 @@ def install(ctx: click.Context, force: bool, name: str):
 	elif name == 'ProjectAliceSatellite':
 		config = getAliceSatConfig(config, releaseType)
 	else:
+		config = dict()
 		commons.printError(f'Unknown install type {name}')
 
 	commons.waitAnimation()
@@ -222,7 +223,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 	operatingSystem = platform.system().lower()
 
 	balenaExecutablePath = getBalenaPath()
-	flasherAvailable = balenaExecutablePath != None
+	flasherAvailable = balenaExecutablePath is not None
 
 	downloadsPath = Path.home() / 'Downloads'
 
@@ -431,6 +432,7 @@ def prepareSdCard(ctx: click.Context):  # NOSONAR
 		commons.returnToMainMenu(ctx, pause=True, message="I'm really sorry, but I just can't continue without this info, sorry for wasting your time...")
 
 	if len(drives) == 1:
+		# noinspection PyBroadException
 		try:
 			device = drives[0].value
 		except:
@@ -605,6 +607,8 @@ def getAliceConfig(confs, releaseType):
 	githubToken = ''
 	enableDataStoring = True
 	skillAutoUpdate = True
+	ttsGender = 'male'
+	ttsVoice = 'en-US'
 
 	if advancedConfigs:
 		asr = inquirer.select(
@@ -632,7 +636,7 @@ def getAliceConfig(confs, releaseType):
 				]
 		).execute()
 
-		ttsGender = 'male'
+		ttsVoiceChoiceText = 'Choose your TTS voice'
 		if tts == 'amazon':
 			awsAccessKey = inquirer.secret(
 					message='Enter your AWS access key',
@@ -647,7 +651,7 @@ def getAliceConfig(confs, releaseType):
 			).execute()
 
 			ttsVoice = inquirer.select(
-				message='Choose your TTS voice',
+				message=ttsVoiceChoiceText,
 				choices=commons.AMAZON_VOICES[activeLanguage] if activeLanguage in commons.AMAZON_VOICES and len(commons.AMAZON_VOICES[activeLanguage]) > 0 else ['en-US']
 			).execute()
 
@@ -655,30 +659,28 @@ def getAliceConfig(confs, releaseType):
 
 		elif tts == 'google':
 			ttsVoice = inquirer.select(
-				message='Choose your TTS voice',
+				message=ttsVoiceChoiceText,
 				choices=commons.GOOGLE_VOICES[activeLanguage] if activeLanguage in commons.GOOGLE_VOICES and len(commons.GOOGLE_VOICES[activeLanguage]) > 0 else ['en-US']
 			).execute()
 
 			ttsVoice, ttsGender = ttsVoice.split('/')
 		elif tts == 'watson':
 			ttsVoice = inquirer.select(
-				message='Choose your TTS voice',
+				message=ttsVoiceChoiceText,
 				choices=commons.WATSON_VOICES[activeLanguage] if activeLanguage in commons.WATSON_VOICES and len(commons.WATSON_VOICES[activeLanguage]) > 0 else ['en-US']
 			).execute()
 
 			ttsVoice, ttsGender = ttsVoice.split('/')
 		elif tts == 'mycroft':
 			ttsVoice = inquirer.select(
-				message='Choose your TTS voice',
+				message=ttsVoiceChoiceText,
 				choices=commons.MYCROFT_VOICES[activeLanguage] if activeLanguage in commons.MYCROFT_VOICES and len(commons.MYCROFT_VOICES[activeLanguage]) > 0 else ['en-US']
 			).execute()
 		elif tts == 'pico':
 			ttsVoice = inquirer.select(
-				message='Choose your TTS voice',
+				message=ttsVoiceChoiceText,
 				choices=commons.PICO_VOICES[activeLanguage] if activeLanguage in commons.PICO_VOICES and len(commons.PICO_VOICES[activeLanguage]) > 0 else ['en-US']
 			).execute()
-		else:
-			ttsVoice = 'en-US'
 
 		if tts == 'google' or asr == 'google':
 			googleServiceFile = inquirer.filepath(
@@ -693,7 +695,7 @@ def getAliceConfig(confs, releaseType):
 		).execute()
 
 		devMode = inquirer.confirm(
-				message='Do you want to activate the developer mode?',
+				message='Do you want to activate the developer mode? You will need a Github account!',
 				default=False
 		).execute()
 
