@@ -56,7 +56,7 @@ def installSoundDevice(ctx: click.Context, device: str):
 	ctx.invoke(uninstallSoundDevice, device=device, return_to_main_menu=False)
 	commons.waitAnimation()
 	sshCmd('sudo apt-get install git -y')
-	if device.lower() in {'respeaker2Mics', 'respeaker4Mics', 'respeaker4miclineararray', 'respeaker6micarray'}:
+	if device.lower() in {'respeaker2mics', 'respeaker4mics', 'respeaker4miclineararray', 'respeaker6micarray'}:
 		sshCmd('git clone https://github.com/HinTak/seeed-voicecard.git ~/seeed-voicecard/')
 		sshCmd('git -C ~/seeed-voicecard/ checkout v5.9 && git -C ~/seeed-voicecard/ pull')
 		sshCmd('cd ~/seeed-voicecard/ && sudo ./install.sh')
