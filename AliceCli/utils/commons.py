@@ -741,6 +741,19 @@ def discover(ctx: click.Context, network: str, all_devices: bool, return_to_main
 
 		stopAnimation()
 
+		if not devices and not all_devices:
+			choice = inquirer.confirm(
+				message='No Project Alice standard device found, do you want to rescan for every devices?',
+				default=False
+			).execute()
+
+			if choice:
+				ctx.invoke(discover, network=network, all_devices=True, return_to_main_menu=return_to_main_menu)
+				return
+			else:
+				returnToMainMenu(ctx)
+
+
 		devices.append('Return to main menu')  # NOSONAR
 		device = inquirer.select(
 			message='Select the device you want to connect to',
