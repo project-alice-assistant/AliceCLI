@@ -74,6 +74,7 @@ def mainMenu(ctx: click.Context):
 	action = inquirer.select(
 		message='',
 		default=None,
+		max_height=37,
 	    choices=[
 		    Separator(line='\n------- Network -------'),
 			Choice(lambda: ctx.invoke(discover), name='Discover devices on network'),
