@@ -124,6 +124,20 @@ def reboot(ctx: click.Context, return_to_main_menu: bool = True):  # NOSONAR
 		commons.returnToMainMenu(ctx, pause=True)
 
 
+@click.command(name='shutdown')
+@click.pass_context
+@checkConnection
+def shutdown(ctx: click.Context, return_to_main_menu: bool = True):  # NOSONAR
+	click.secho('Shutting down device, please wait', fg='yellow')
+
+	commons.waitAnimation()
+	commons.sshCmd('sudo shutdown now')
+	ctx.invoke(commons.disconnect)
+	commons.printSuccess('Device shut down!')
+
+	if return_to_main_menu:
+		commons.returnToMainMenu(ctx, pause=True)
+
 @click.command(name='updateSystem')
 @click.pass_context
 @checkConnection

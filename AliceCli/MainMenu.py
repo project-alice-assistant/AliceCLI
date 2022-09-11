@@ -102,6 +102,7 @@ def mainMenu(ctx: click.Context):
 		    Choice(lambda: ctx.invoke(systemLogs), name='Check system logs'),
 		    Separator(line='\n------- Tools -------'),
 		    Choice(lambda: ctx.invoke(reboot), name='Reboot device'),
+		    Choice(lambda: ctx.invoke(shutdown), name='Shutdown device'),
 		    Choice(lambda: ctx.invoke(uninstallSoundDevice), name='Uninstall your sound device'),
 		    Choice(lambda: ctx.invoke(disableRespeakerLeds), name='Turn off Respeaker bright white leds'),
 		    Choice(lambda: sys.exit(0), name='Exit')
